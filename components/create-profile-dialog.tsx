@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { createProfile } from "@/app/actions"; // adjust path to actions
+import { createProfile } from "@/app/actions";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -18,47 +19,90 @@ import { Label } from "@/components/ui/label";
 
 export function CreateProfileDialog() {
     const [open, setOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    async function handleSubmit(formData: FormData) {
+    async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        const formData = new FormData(e.currentTarget);
         const name = formData.get("name") as string;
-        console.log(await createProfile(name));
-        setOpen(false);
+
+        try {
+            const response = await createProfile(name);
+
+            if (!response.success) {
+                toast.error("Failed to create profile", {
+                    description:
+                        response.error ||
+                        "Something went wrong. Please check your input and try again.",
+                });
+                return;
+            }
+
+            toast.success(`Created profile ${response.data?.name}`);
+        } catch (error) {
+            toast.error("Connection/System Error", {
+                description:
+                    "A network or system error occurred. Please try again later.\n" +
+                    error,
+            });
+        } finally {
+            setIsSubmitting(false);
+            setOpen(false);
+        }
     }
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger
                 render={
-                    <Button variant="outline" size="lg" className="p-8">
+                    <Button
+                        nativeButton={true}
+                        variant="outline"
+                        size="lg"
+                        className="p-8"
+                    >
                         New Profile
                     </Button>
                 }
             ></DialogTrigger>
 
             <DialogContent>
-                <form action={handleSubmit}>
+                <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle className="text-center">
-                            Create New Profile
+                            Create new profile
                         </DialogTitle>
                     </DialogHeader>
 
                     <FieldGroup className="py-4">
                         <Field>
                             <Label htmlFor="profile-name">Name</Label>
-                            <Input id="profile-name" name="name" required />
+                            <Input
+                                id="profile-name"
+                                name="name"
+                                required
+                                disabled={isSubmitting}
+                            />
                         </Field>
                     </FieldGroup>
 
                     <DialogFooter>
                         <DialogClose
                             render={
-                                <Button type="button" variant="outline">
+                                <Button
+                                    nativeButton={true}
+                                    type="button"
+                                    variant="outline"
+                                >
                                     Cancel
                                 </Button>
                             }
                         ></DialogClose>
-                        <Button type="submit">Create</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? "Creating..." : "Create"}
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

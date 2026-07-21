@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createProfile, deleteProfile } from "@/app/actions"; // adjust path to actions
+import { deleteProfile } from "@/app/actions";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -14,9 +15,6 @@ import {
     DialogClose,
     DialogDescription,
 } from "@/components/ui/dialog";
-import { Field, FieldGroup } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 interface DeleteProfileDialogProps {
     id: string;
@@ -35,12 +33,25 @@ export function DeleteProfileDialog({
         setIsDeleting(true);
         try {
             const response = await deleteProfile(id);
-            if (response.success) {
-                setOpen(false);
-                router.push("/");
+
+            if (!response.success) {
+                toast.error("Failed to delete profile", {
+                    description: response.error || "Something went wrong.",
+                });
+                return;
             }
+
+            toast.success(`Deleted profile ${response.data?.name}`);
+        } catch (error) {
+            toast.error("Connection/System Error", {
+                description:
+                    "A network or system error occurred. Please try again later.\n" +
+                    error,
+            });
         } finally {
             setIsDeleting(false);
+            setOpen(false);
+            router.push("/");
         }
     }
 

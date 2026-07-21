@@ -10,11 +10,11 @@ export async function getProfiles() {
                 createdAt: "asc",
             },
         });
-        console.log(profiles);
+
         return { success: true, data: profiles };
     } catch (error) {
         console.error(error);
-        return { success: false, error: error };
+        return { success: false, error: `Failed to get profiles: ${error}` };
     }
 }
 
@@ -28,15 +28,19 @@ export async function createProfile(name: string | null) {
         revalidatePath("/");
         return { success: true, data: newProfile };
     } catch (error) {
-        // Handling jika nama profil sudah ada (unique constraint)
-        // if (error.code === "P2002") {
-        //     return {
-        //         success: false,
-        //         error: "Profil dengan nama tersebut sudah ada.",
-        //     };
-        // }
+        if (
+            typeof error === "object" &&
+            error !== null &&
+            "code" in error &&
+            (error as { code?: unknown }).code === "P2002"
+        ) {
+            return {
+                success: false,
+                error: "A profile with the same name already exist.",
+            };
+        }
         console.error("Error creating profile:", error);
-        return { success: false, error: error };
+        return { success: false, error: `Failed to create profile: ${error}` };
     }
 }
 
@@ -55,7 +59,12 @@ export async function deleteProfile(id: string | null) {
         revalidatePath("/");
         return { success: true, data: result };
     } catch (error) {
-        console.error("Error deleting profile:", error);
-        return { success: false, error: error };
+        // console.error("Error deleting profile:", error);
+        return { success: false, error: `Failed to delete profile: ${error}` };
     }
 }
+
+// for testing
+const sleep = (ms: number): Promise<void> => {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+};
