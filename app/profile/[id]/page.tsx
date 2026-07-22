@@ -11,7 +11,6 @@ import {
 import { toast } from "sonner";
 import { prisma } from "@/lib/prisma";
 import { getTransactionsWithAccumulation } from "@/app/actions";
-import { columns } from "./columns";
 import { DataTable } from "./transactions-table";
 import type { Transaction } from "@prisma/client";
 
@@ -25,18 +24,18 @@ export default async function ProfileDetailPage({ params }: PageProps) {
     const { id } = await params;
     const profile = await prisma.profile.findUnique({ where: { id: id } });
 
-    const response = await getTransactionsWithAccumulation(id);
+    // const response = await getTransactionsWithAccumulation(id);
 
-    if (!response.success) {
-        toast.error("Failed to create profile", {
-            description:
-                response.error ||
-                "Something went wrong. Please check your input and try again.",
-        });
-        return;
-    }
+    // if (!response.success) {
+    //     toast.error("Failed to create profile", {
+    //         description:
+    //             response.error ||
+    //             "Something went wrong. Please check your input and try again.",
+    //     });
+    //     return;
+    // }
 
-    const data = response.data || [];
+    // const data = response.data || [];
 
     return (
         <>
@@ -113,11 +112,7 @@ export default async function ProfileDetailPage({ params }: PageProps) {
 
             <div className="flex flex-col gap-4 items-center mx-auto my-8">
                 <h1 className="text-xl">Transaksi {profile?.name}</h1>
-                <DataTable
-                    columns={columns}
-                    data={data}
-                    verticalBorder={true}
-                />
+                <DataTable profileId={id} verticalBorder={true} />
             </div>
         </>
     );

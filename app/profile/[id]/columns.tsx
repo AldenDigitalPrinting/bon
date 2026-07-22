@@ -53,8 +53,11 @@ function SortableHeader<T>({
 
 // TODO: Filter by person name
 
-// TODO: Pagination, will relate to limit fetching
-export const columns: ColumnDef<Transaction>[] = [
+export type TransactionWithAccumulation = Transaction & {
+    accumulation: number;
+};
+
+export const columns: ColumnDef<TransactionWithAccumulation>[] = [
     {
         accessorKey: "date",
         header: ({ column }) => <SortableHeader column={column} title="Date" />,

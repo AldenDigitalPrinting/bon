@@ -69,15 +69,43 @@ export async function deleteProfile(id: string | null) {
     }
 }
 
-export async function getTransactionsWithAccumulation(profileId: string) {
+// TODO: Sort by on findMany()
+export async function getTransactionsWithAccumulation(
+    profileId: string,
+    page: number = 1,
+    pageSize: number = 100,
+) {
     try {
-        // TODO: Limit fetching, will relate to pagination
+        const skip = (page - 1) * pageSize;
+
+        const totalCount = await prisma.transaction.count({
+            where: { profileId: profileId },
+        });
+
+        let priorAccumulation = 0;
+
+        if (skip > 0) {
+            const priorTransactions = await prisma.transaction.findMany({
+                where: { profileId: profileId },
+                orderBy: { date: "asc" },
+                take: skip,
+                select: { debtAdded: true, debtPaid: true },
+            });
+
+            priorAccumulation = priorTransactions.reduce(
+                (acc, item) => acc + item.debtAdded - item.debtPaid,
+                0,
+            );
+        }
+
         const rawTransactions = await prisma.transaction.findMany({
             where: { profileId },
             orderBy: { date: "asc" },
+            skip: skip,
+            take: pageSize,
         });
 
-        let runningAccumulation = 0;
+        let runningAccumulation = priorAccumulation;
 
         const transactionsWithAccumulation = rawTransactions.map((item) => {
             runningAccumulation =
@@ -89,7 +117,18 @@ export async function getTransactionsWithAccumulation(profileId: string) {
             };
         });
 
-        return { success: true, data: transactionsWithAccumulation };
+        const totalPages = Math.ceil(totalCount / pageSize);
+
+        return {
+            success: true,
+            data: transactionsWithAccumulation,
+            pagination: {
+                totalCount,
+                totalPages,
+                currentPage: page,
+                pageSize,
+            },
+        };
     } catch (error) {
         console.error("Error fetching transactions:", error);
         return {
