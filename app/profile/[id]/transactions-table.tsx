@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useTransition } from "react";
 import {
-    ColumnDef,
     SortingState,
     flexRender,
     getCoreRowModel,
@@ -17,20 +16,40 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { columns } from "./columns";
-import type { TransactionWithAccumulation } from "./columns";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { PageNavigation } from "@/components/pagination-input";
 import { getTransactionsWithAccumulation } from "@/app/actions";
+import { columns } from "./columns";
+import type { TransactionWithAccumulation } from "./columns";
 
-interface DataTableProps<TData, TValue> {
+const PAGE_SIZES = [25, 50, 75, 100] as const;
+
+export type PageSize = (typeof PAGE_SIZES)[number];
+
+export const DEFAULT_PAGE_SIZE: PageSize = 25;
+
+export const PAGE_SIZE_OPTIONS = PAGE_SIZES.map((i) => ({
+    label: `${i} records per page`,
+    value: i,
+}));
+
+interface TransactionDataTableProps {
     profileId: string;
     verticalBorder?: boolean;
 }
 
-export function DataTable<TData, TValue>({
+export function TransactionDataTable({
     profileId,
     verticalBorder = false,
-}: DataTableProps<TData, TValue>) {
+}: TransactionDataTableProps) {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [data, setData] = useState<TransactionWithAccumulation[]>([]);
     const [page, setPage] = useState(1);
@@ -38,14 +57,14 @@ export function DataTable<TData, TValue>({
     const [totalCount, setTotalCount] = useState(0);
     const [isPending, startTransition] = useTransition();
 
-    const pageSize = 5;
+    const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0].value);
 
     useEffect(() => {
         startTransition(async () => {
             const res = await getTransactionsWithAccumulation(
                 profileId,
                 page,
-                pageSize,
+                Number(pageSize),
             );
             if (res.success && res.data && res.pagination) {
                 setData(res.data);
@@ -70,9 +89,18 @@ export function DataTable<TData, TValue>({
         },
     });
 
+    const handlePageSizeChange = (size: string | null) => {
+        if (size === null) return;
+        const newSize = Number(size) as PageSize;
+        if (!isNaN(newSize)) {
+            setPageSize(newSize);
+            setPage(1);
+        }
+    };
+
     return (
         <>
-            <div className="rounded-md border ">
+            <div className="rounded-md border">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -148,16 +176,45 @@ export function DataTable<TData, TValue>({
                     </TableBody>
                 </Table>
             </div>
-            <div className="flex flex-col space-y-2 items-center justify-between px-2">
+            <div className="flex items-center w-full px-2">
                 <div className="text-sm text-muted-foreground">
-                    Total records: {totalCount}
+                    Displaying: {data.length} / {totalCount}
                 </div>
-                <PageNavigation
-                    page={page}
-                    totalPages={totalPages}
-                    onPageChange={(newPage) => setPage(newPage)}
-                    disabled={isPending}
-                />
+                <div className="m-auto">
+                    <PageNavigation
+                        page={page}
+                        totalPages={totalPages}
+                        onPageChange={(newPage) => setPage(newPage)}
+                        disabled={isPending}
+                    />
+                </div>
+                <Field className="w-full max-w-48">
+                    <Select
+                        items={PAGE_SIZE_OPTIONS}
+                        value={
+                            PAGE_SIZE_OPTIONS.find(
+                                ({ value }) => value === pageSize,
+                            )?.label || String(pageSize)
+                        }
+                        onValueChange={handlePageSizeChange}
+                    >
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                {PAGE_SIZE_OPTIONS.map((item) => (
+                                    <SelectItem
+                                        key={item.value}
+                                        value={item.value}
+                                    >
+                                        {item.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                </Field>
             </div>
         </>
     );

@@ -1,19 +1,5 @@
-import {
-    Table,
-    TableBody,
-    TableCaption,
-    TableCell,
-    TableFooter,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { toast } from "sonner";
 import { prisma } from "@/lib/prisma";
-import { getTransactionsWithAccumulation } from "@/app/actions";
-import { DataTable } from "./transactions-table";
-import type { Transaction } from "@prisma/client";
-
+import { TransactionDataTable } from "./transactions-table";
 interface PageProps {
     params: Promise<{
         id: string;
@@ -112,7 +98,7 @@ export default async function ProfileDetailPage({ params }: PageProps) {
 
             <div className="flex flex-col gap-4 items-center mx-auto my-8">
                 <h1 className="text-xl">Transaksi {profile?.name}</h1>
-                <DataTable profileId={id} verticalBorder={true} />
+                <TransactionDataTable profileId={id} verticalBorder={true} />
             </div>
         </>
     );
