@@ -4,9 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 // for testing
-const sleep = (ms: number): Promise<void> => {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-};
+// const sleep = (ms: number): Promise<void> => {
+//     return new Promise((resolve) => setTimeout(resolve, ms));
+// };
 
 export async function getProfiles() {
     try {
