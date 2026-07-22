@@ -12,7 +12,6 @@ interface PageNavigationProps {
     disabled?: boolean;
 }
 
-// TODO: Show 25, 50, 75, 100 entries per page
 export function PageNavigation({
     page,
     totalPages,
