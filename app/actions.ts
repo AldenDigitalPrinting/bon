@@ -3,6 +3,11 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
+// for testing
+const sleep = (ms: number): Promise<void> => {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
 export async function getProfiles() {
     try {
         const profiles = await prisma.profile.findMany({
@@ -13,7 +18,7 @@ export async function getProfiles() {
 
         return { success: true, data: profiles };
     } catch (error) {
-        console.error(error);
+        console.error("Error fetching profiles:", error);
         return { success: false, error: `Failed to get profiles: ${error}` };
     }
 }
@@ -59,12 +64,37 @@ export async function deleteProfile(id: string | null) {
         revalidatePath("/");
         return { success: true, data: result };
     } catch (error) {
-        // console.error("Error deleting profile:", error);
+        console.error("Error deleting profile:", error);
         return { success: false, error: `Failed to delete profile: ${error}` };
     }
 }
 
-// for testing
-const sleep = (ms: number): Promise<void> => {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-};
+export async function getTransactionsWithAccumulation(profileId: string) {
+    try {
+        // TODO: Limit fetching, will relate to pagination
+        const rawTransactions = await prisma.transaction.findMany({
+            where: { profileId },
+            orderBy: { date: "asc" },
+        });
+
+        let runningAccumulation = 0;
+
+        const transactionsWithAccumulation = rawTransactions.map((item) => {
+            runningAccumulation =
+                runningAccumulation + item.debtAdded - item.debtPaid;
+
+            return {
+                ...item,
+                accumulation: runningAccumulation,
+            };
+        });
+
+        return { success: true, data: transactionsWithAccumulation };
+    } catch (error) {
+        console.error("Error fetching transactions:", error);
+        return {
+            success: false,
+            error: `Failed to get transactions: ${error}`,
+        };
+    }
+}
