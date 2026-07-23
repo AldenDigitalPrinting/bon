@@ -51,7 +51,7 @@ export function TransactionDataTable({
     verticalBorder = false,
     initialPage = "last",
 }: TransactionDataTableProps) {
-    const [sorting, setSorting] = useState<SortingState>([]);
+    // const [sorting, setSorting] = useState<SortingState>([]);
     const [data, setData] = useState<TransactionWithAccumulation[]>([]);
     const [page, setPage] = useState<PageParam>(initialPage);
     const [totalPages, setTotalPages] = useState(1);
@@ -83,11 +83,11 @@ export function TransactionDataTable({
         manualPagination: true,
         pageCount: totalPages,
 
-        onSortingChange: setSorting,
-        getSortedRowModel: getSortedRowModel(),
-        state: {
-            sorting,
-        },
+        // onSortingChange: setSorting,
+        // getSortedRowModel: getSortedRowModel(),
+        // state: {
+        //     sorting,
+        // },
     });
 
     const handlePageSizeChange = (size: string | null) => {
@@ -101,8 +101,8 @@ export function TransactionDataTable({
 
     return (
         <>
-            <div className="rounded-md border">
-                <Table>
+            <div className="rounded-md border w-full">
+                <Table className="w-full">
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
@@ -110,9 +110,11 @@ export function TransactionDataTable({
                                     return (
                                         <TableHead
                                             key={header.id}
-                                            className={
-                                                verticalBorder ? "border-r" : ""
-                                            }
+                                            className={[
+                                                verticalBorder
+                                                    ? "border-r"
+                                                    : "",
+                                            ].join(" ")}
                                         >
                                             {header.isPlaceholder
                                                 ? null
