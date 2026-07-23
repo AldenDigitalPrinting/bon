@@ -60,12 +60,17 @@ export function TransactionDataTable({
 
     const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0].value);
 
+    const [searchPersonName, setSearchPersonName] = useState("");
+    const [searchItemName, setSearchItemName] = useState("");
+
     useEffect(() => {
         startTransition(async () => {
             const res = await getTransactionsWithAccumulation(
                 profileId,
                 page,
                 Number(pageSize),
+                searchPersonName,
+                searchItemName,
             );
             if (res.success && res.data && res.pagination) {
                 setData(res.data);
@@ -73,7 +78,7 @@ export function TransactionDataTable({
                 setTotalCount(res.pagination.totalCount);
             }
         });
-    }, [profileId, page, pageSize]);
+    }, [profileId, page, pageSize, searchPersonName, searchItemName]);
 
     const table = useReactTable({
         data,
@@ -101,6 +106,29 @@ export function TransactionDataTable({
 
     return (
         <>
+            {/* Search Input Bar */}
+            <div className="flex flex-col sm:flex-row gap-4 w-full mb-4">
+                <input
+                    type="text"
+                    placeholder="Search person name..."
+                    value={searchPersonName}
+                    onChange={(e) => {
+                        setSearchPersonName(e.target.value);
+                        setPage(1); // Reset to page 1 on search
+                    }}
+                    className="flex h-9 w-full sm:w-1/2 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+                <input
+                    type="text"
+                    placeholder="Search item name..."
+                    value={searchItemName}
+                    onChange={(e) => {
+                        setSearchItemName(e.target.value);
+                        setPage(1); // Reset to page 1 on search
+                    }}
+                    className="flex h-9 w-full sm:w-1/2 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+            </div>
             <div className="rounded-md border w-full">
                 <Table className="w-full">
                     <TableHeader>
