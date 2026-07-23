@@ -69,18 +69,27 @@ export async function deleteProfile(id: string | null) {
     }
 }
 
+export type PageParam = number | "last";
+
 // TODO: Sort by on findMany()
 export async function getTransactionsWithAccumulation(
     profileId: string,
-    page: number = 1,
+    page: PageParam,
     pageSize: number = 100,
 ) {
     try {
-        const skip = (page - 1) * pageSize;
-
         const totalCount = await prisma.transaction.count({
             where: { profileId: profileId },
         });
+
+        const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+        const currentPage =
+            page === "last"
+                ? totalPages
+                : Math.min(Math.max(1, page), totalPages);
+
+        const skip = (currentPage - 1) * pageSize;
 
         let priorAccumulation = 0;
 
@@ -116,8 +125,6 @@ export async function getTransactionsWithAccumulation(
                 accumulation: runningAccumulation,
             };
         });
-
-        const totalPages = Math.ceil(totalCount / pageSize);
 
         return {
             success: true,
