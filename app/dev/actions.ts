@@ -1,8 +1,47 @@
 "use server";
 
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma"; // Adjust path if needed
+import { prisma } from "@/lib/prisma";
 import { faker } from "@faker-js/faker";
+
+/**
+ * Recalculates and updates the running accumulation for ALL transactions
+ * of a specific profileId in strict chronological order.
+ */
+// export async function recalculateProfileAccumulation(profileId: string) {
+//     const transactions = await prisma.transaction.findMany({
+//         where: { profileId },
+//         orderBy: [{ date: "asc" }, { id: "asc" }],
+//         select: { id: true, debtAdded: true, debtPaid: true },
+//     });
+
+//     let runningAccumulation = 0;
+
+//     // Batch update all rows in a single database transaction
+//     const updates = transactions.map((tx) => {
+//         runningAccumulation += tx.debtAdded - tx.debtPaid;
+//         return prisma.transaction.update({
+//             where: { id: tx.id },
+//             data: { accumulation: runningAccumulation },
+//         });
+//     });
+
+//     await prisma.$transaction(updates);
+// }
+
+export async function recalculateProfileAccumulation(profileId: string) {
+    await prisma.$executeRaw`
+        WITH calculated AS (
+            SELECT id, SUM("debtAdded" - "debtPaid") OVER (ORDER BY date ASC, id ASC) as new_acc
+            FROM "Transaction"
+            WHERE "profileId" = ${profileId}
+        )
+        UPDATE "Transaction" t
+        SET accumulation = c.new_acc
+        FROM calculated c
+        WHERE t.id = c.id
+    `;
+}
 
 export async function createDummyTransactions(formData: FormData) {
     if (process.env.NODE_ENV !== "development") {
@@ -12,7 +51,6 @@ export async function createDummyTransactions(formData: FormData) {
     const profileId = (formData.get("profileId") as string)?.trim();
     const count = parseInt((formData.get("count") as string) || "1", 10);
 
-    // Custom optional overrides
     const customPersonName = (formData.get("personName") as string)?.trim();
     const customItemName = (formData.get("itemName") as string)?.trim();
     const rawQuantity = formData.get("itemQuantity") as string;
@@ -37,20 +75,15 @@ export async function createDummyTransactions(formData: FormData) {
         const mockData = [];
 
         for (let i = 0; i < count; i++) {
-            // 1. Item Name
             const itemName =
                 customItemName || faker.helpers.arrayElement(itemsList);
             const isPayment = itemName.toLowerCase().includes("pembayaran");
-
-            // 2. Person Name
             const personName = customPersonName || faker.person.firstName();
 
-            // 3. Date
             const date = rawDate
                 ? new Date(rawDate)
                 : faker.date.recent({ days: 7 });
 
-            // 4. Quantity & Price
             let itemQuantity: number | null = null;
             if (rawQuantity !== "" && rawQuantity !== null) {
                 itemQuantity = parseInt(rawQuantity, 10);
@@ -72,7 +105,6 @@ export async function createDummyTransactions(formData: FormData) {
                 });
             }
 
-            // 5. Debt Added (auto-calculate if not manually specified)
             let debtAdded: number;
             if (rawDebtAdded !== "" && rawDebtAdded !== null) {
                 debtAdded = parseInt(rawDebtAdded, 10);
@@ -84,7 +116,6 @@ export async function createDummyTransactions(formData: FormData) {
                     : itemPrice || 0;
             }
 
-            // 6. Debt Paid
             let debtPaid: number;
             if (rawDebtPaid !== "" && rawDebtPaid !== null) {
                 debtPaid = parseInt(rawDebtPaid, 10);
@@ -107,12 +138,20 @@ export async function createDummyTransactions(formData: FormData) {
                 itemPrice,
                 debtAdded,
                 debtPaid,
+                accumulation: 0,
             });
         }
 
+        // Sort chronologically before insertion
+        mockData.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+        // 1. Bulk insert seeded rows
         await prisma.transaction.createMany({
             data: mockData,
         });
+
+        // 2. Recalculate stored accumulation for this profile
+        await recalculateProfileAccumulation(profileId);
 
         return { success: true, count };
     } catch (error) {
