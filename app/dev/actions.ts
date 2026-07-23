@@ -71,6 +71,7 @@ export async function createDummyTransactions(formData: FormData) {
             "Jasa Fotocopy",
             "Jasa",
             "Alat Tulis",
+            "Pembayaran",
         ];
         const mockData = [];
 
