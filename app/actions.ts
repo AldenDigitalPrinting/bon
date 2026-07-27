@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 // for testing
@@ -71,64 +72,53 @@ export async function deleteProfile(id: string | null) {
 
 export type PageParam = number | "last";
 
-// TODO: Sort by on findMany()
+// TODO: Seach person name, item name
 export async function getTransactionsWithAccumulation(
     profileId: string,
     page: PageParam,
     pageSize: number = 100,
+    searchPersonName?: string,
+    searchItemName?: string,
 ) {
     try {
+        const where: Prisma.TransactionWhereInput = { profileId };
+
+        if (searchPersonName?.trim()) {
+            where.personName = {
+                contains: searchPersonName.trim(),
+                mode: "insensitive",
+            };
+            console.log(`searching person name: ${searchPersonName.trim()}`);
+        }
+
+        if (searchItemName?.trim()) {
+            where.itemName = {
+                contains: searchItemName.trim(),
+                mode: "insensitive",
+            };
+            console.log(`searching item name: ${searchItemName.trim()}`);
+        }
+
         const totalCount = await prisma.transaction.count({
-            where: { profileId: profileId },
+            where,
         });
-
         const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-
         const currentPage =
             page === "last"
                 ? totalPages
                 : Math.min(Math.max(1, page), totalPages);
-
         const skip = (currentPage - 1) * pageSize;
 
-        let priorAccumulation = 0;
-
-        if (skip > 0) {
-            const priorTransactions = await prisma.transaction.findMany({
-                where: { profileId: profileId },
-                orderBy: { date: "asc" },
-                take: skip,
-                select: { debtAdded: true, debtPaid: true },
-            });
-
-            priorAccumulation = priorTransactions.reduce(
-                (acc, item) => acc + item.debtAdded - item.debtPaid,
-                0,
-            );
-        }
-
-        const rawTransactions = await prisma.transaction.findMany({
-            where: { profileId },
-            orderBy: { date: "asc" },
-            skip: skip,
+        const data = await prisma.transaction.findMany({
+            where,
+            orderBy: [{ date: "asc" }, { id: "asc" }],
+            skip,
             take: pageSize,
-        });
-
-        let runningAccumulation = priorAccumulation;
-
-        const transactionsWithAccumulation = rawTransactions.map((item) => {
-            runningAccumulation =
-                runningAccumulation + item.debtAdded - item.debtPaid;
-
-            return {
-                ...item,
-                accumulation: runningAccumulation,
-            };
         });
 
         return {
             success: true,
-            data: transactionsWithAccumulation,
+            data,
             pagination: {
                 totalCount,
                 totalPages,

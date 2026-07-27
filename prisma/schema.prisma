@@ -30,6 +30,7 @@ model Transaction {
   itemPrice     Int?
   debtAdded     Int
   debtPaid      Int
+  accumulation  Int
   
   createdAt     DateTime  @default(now())
 }
