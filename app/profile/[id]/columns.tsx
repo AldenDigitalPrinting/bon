@@ -1,9 +1,10 @@
 "use client";
 
-import { Column, ColumnDef } from "@tanstack/react-table";
+// import { Column, ColumnDef } from "@tanstack/react-table";
+import { ColumnDef } from "@tanstack/react-table";
 import type { Transaction } from "@prisma/client";
-import { Button } from "@/components/ui/button";
-import { ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
+// import { Button } from "@/components/ui/button";
+// import { ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
 
 function formatIDR(amount: number) {
     const partsFormatter = new Intl.NumberFormat("id-ID", {
@@ -22,31 +23,40 @@ function formatIDR(amount: number) {
     return cleanIDR;
 }
 
-interface SortableHeaderProps<T> {
-    column: Column<T, unknown>;
+// interface SortableHeaderProps<T> {
+//     column: Column<T, unknown>;
+//     title: string;
+//     className?: string;
+// }
+
+// function SortableHeader<T>({
+//     column,
+//     title,
+//     className,
+// }: SortableHeaderProps<T>) {
+//     const isSorted = column.getIsSorted();
+
+//     return (
+//         <Button
+//             variant="ghost"
+//             onClick={() => column.toggleSorting(isSorted === "asc")}
+//             className={className}
+//         >
+//             <span>{title}</span>
+//             {isSorted === "asc" && <ChevronUp className="ml-2 h-4 w-4" />}
+//             {isSorted === "desc" && <ChevronDown className="ml-2 h-4 w-4" />}
+//             {!isSorted && <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />}
+//         </Button>
+//     );
+// }
+
+interface HeaderProps {
     title: string;
     className?: string;
 }
 
-function SortableHeader<T>({
-    column,
-    title,
-    className,
-}: SortableHeaderProps<T>) {
-    const isSorted = column.getIsSorted();
-
-    return (
-        <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(isSorted === "asc")}
-            className={className}
-        >
-            <span>{title}</span>
-            {isSorted === "asc" && <ChevronUp className="ml-2 h-4 w-4" />}
-            {isSorted === "desc" && <ChevronDown className="ml-2 h-4 w-4" />}
-            {!isSorted && <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />}
-        </Button>
-    );
+function Header({ title, className }: HeaderProps) {
+    return <span className={["", className].join(" ")}>{title}</span>;
 }
 
 // TODO: Filter by date range
@@ -60,7 +70,7 @@ export type TransactionWithAccumulation = Transaction & {
 export const columns: ColumnDef<TransactionWithAccumulation>[] = [
     {
         accessorKey: "date",
-        header: ({ column }) => <SortableHeader column={column} title="Date" />,
+        header: () => <Header title="Date" />,
         cell: ({ row }) => {
             const date = new Date(row.getValue("date"));
             const formattedDate = date.toLocaleDateString("id-ID", {
@@ -73,30 +83,22 @@ export const columns: ColumnDef<TransactionWithAccumulation>[] = [
     },
     {
         accessorKey: "personName",
-        header: ({ column }) => (
-            <SortableHeader column={column} title="Person Name" />
-        ),
+        header: () => <Header title="Person Name" />,
     },
     {
         accessorKey: "itemName",
-        header: ({ column }) => (
-            <SortableHeader column={column} title="Item Name" />
-        ),
+        header: () => <Header title="Item Name" />,
     },
     {
         accessorKey: "itemQuantity",
-        header: ({ column }) => (
-            <SortableHeader column={column} title="Item Quantity" />
-        ),
+        header: () => <Header title="Item Quantity" />,
         cell: ({ row }) => (
             <div className="text-right">{row.getValue("itemQuantity")}</div>
         ),
     },
     {
         accessorKey: "itemPrice",
-        header: ({ column }) => (
-            <SortableHeader column={column} title="Item Price" />
-        ),
+        header: () => <Header title="Item Price" />,
         cell: ({ row }) => {
             const amount = parseFloat(row.getValue("itemPrice"));
 
@@ -107,9 +109,7 @@ export const columns: ColumnDef<TransactionWithAccumulation>[] = [
     },
     {
         accessorKey: "debtAdded",
-        header: ({ column }) => (
-            <SortableHeader column={column} title="Debt Added" />
-        ),
+        header: () => <Header title="Debt Added" />,
         cell: ({ row }) => {
             const amount = parseFloat(row.getValue("debtAdded"));
 
@@ -120,9 +120,7 @@ export const columns: ColumnDef<TransactionWithAccumulation>[] = [
     },
     {
         accessorKey: "debtPaid",
-        header: ({ column }) => (
-            <SortableHeader column={column} title="Debt Paid" />
-        ),
+        header: () => <Header title="Debt Paid" />,
         cell: ({ row }) => {
             const amount = parseFloat(row.getValue("debtPaid"));
 
@@ -133,9 +131,7 @@ export const columns: ColumnDef<TransactionWithAccumulation>[] = [
     },
     {
         accessorKey: "accumulation",
-        header: ({ column }) => (
-            <SortableHeader column={column} title="Accumulation" />
-        ),
+        header: () => <Header title="Accumulation" />,
         cell: ({ row }) => {
             const amount = parseFloat(row.getValue("accumulation"));
 

@@ -26,9 +26,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { PageNavigation } from "@/components/pagination-input";
-import { getTransactionsWithAccumulation } from "@/app/actions";
-import { columns } from "./columns";
-import type { TransactionWithAccumulation } from "./columns";
+import { getTransactionsWithAccumulation, type PageParam } from "@/app/actions";
+import { columns, type TransactionWithAccumulation } from "./columns";
 
 const PAGE_SIZES = [25, 50, 75, 100] as const;
 
@@ -44,15 +43,17 @@ export const PAGE_SIZE_OPTIONS = PAGE_SIZES.map((i) => ({
 interface TransactionDataTableProps {
     profileId: string;
     verticalBorder?: boolean;
+    initialPage?: PageParam;
 }
 
 export function TransactionDataTable({
     profileId,
     verticalBorder = false,
+    initialPage = "last",
 }: TransactionDataTableProps) {
-    const [sorting, setSorting] = useState<SortingState>([]);
+    // const [sorting, setSorting] = useState<SortingState>([]);
     const [data, setData] = useState<TransactionWithAccumulation[]>([]);
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState<PageParam>(initialPage);
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
     const [isPending, startTransition] = useTransition();
@@ -82,11 +83,11 @@ export function TransactionDataTable({
         manualPagination: true,
         pageCount: totalPages,
 
-        onSortingChange: setSorting,
-        getSortedRowModel: getSortedRowModel(),
-        state: {
-            sorting,
-        },
+        // onSortingChange: setSorting,
+        // getSortedRowModel: getSortedRowModel(),
+        // state: {
+        //     sorting,
+        // },
     });
 
     const handlePageSizeChange = (size: string | null) => {
@@ -100,8 +101,8 @@ export function TransactionDataTable({
 
     return (
         <>
-            <div className="rounded-md border">
-                <Table>
+            <div className="rounded-md border w-full">
+                <Table className="w-full">
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
@@ -109,9 +110,11 @@ export function TransactionDataTable({
                                     return (
                                         <TableHead
                                             key={header.id}
-                                            className={
-                                                verticalBorder ? "border-r" : ""
-                                            }
+                                            className={[
+                                                verticalBorder
+                                                    ? "border-r"
+                                                    : "",
+                                            ].join(" ")}
                                         >
                                             {header.isPlaceholder
                                                 ? null
@@ -182,7 +185,7 @@ export function TransactionDataTable({
                 </div>
                 <div className="m-auto">
                     <PageNavigation
-                        page={page}
+                        page={typeof page === "number" ? page : totalPages}
                         totalPages={totalPages}
                         onPageChange={(newPage) => setPage(newPage)}
                         disabled={isPending}
