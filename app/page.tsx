@@ -7,7 +7,7 @@ export default async function Home() {
     const profiles = await getProfiles();
 
     return (
-        <section className="flex flex-col m-auto">
+        <div className="flex flex-col m-auto">
             <div className="flex flex-row gap-2">
                 {profiles.data?.map((profile) => (
                     <Link
@@ -25,6 +25,6 @@ export default async function Home() {
 
                 <CreateProfileDialog />
             </div>
-        </section>
+        </div>
     );
 }
