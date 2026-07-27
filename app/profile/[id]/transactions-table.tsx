@@ -2,10 +2,8 @@
 
 import { useState, useEffect, useTransition } from "react";
 import {
-    SortingState,
     flexRender,
     getCoreRowModel,
-    getSortedRowModel,
     useReactTable,
 } from "@tanstack/react-table";
 import {
@@ -16,7 +14,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
     Select,
     SelectContent,
@@ -25,9 +23,19 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+// import {
+//     Collapsible,
+//     CollapsibleContent,
+//     CollapsibleTrigger,
+// } from "@/components/ui/collapsible";
+import { Button } from "@/components/ui/button";
+import { DateRangeFilterPicker } from "@/app/profile/[id]/date-range-picker";
+import { Input } from "@/components/ui/input";
 import { PageNavigation } from "@/components/pagination-input";
 import { getTransactionsWithAccumulation, type PageParam } from "@/app/actions";
 import { columns, type TransactionWithAccumulation } from "./columns";
+import { DateRange } from "react-day-picker";
+import { X } from "lucide-react";
 
 const PAGE_SIZES = [10, 25, 50, 75, 100] as const;
 
@@ -63,14 +71,27 @@ export function TransactionDataTable({
     const [searchPersonName, setSearchPersonName] = useState("");
     const [searchItemName, setSearchItemName] = useState("");
 
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(
+        undefined,
+    );
+
     useEffect(() => {
         startTransition(async () => {
+            const startDateStr = dateRange?.from
+                ? dateRange.from.toISOString()
+                : undefined;
+            const endDateStr = dateRange?.to
+                ? dateRange.to.toISOString()
+                : undefined;
+
             const res = await getTransactionsWithAccumulation(
                 profileId,
                 page,
                 Number(pageSize),
                 searchPersonName,
                 searchItemName,
+                startDateStr,
+                endDateStr,
             );
             if (res.success && res.data && res.pagination) {
                 setData(res.data);
@@ -78,7 +99,14 @@ export function TransactionDataTable({
                 setTotalCount(res.pagination.totalCount);
             }
         });
-    }, [profileId, page, pageSize, searchPersonName, searchItemName]);
+    }, [
+        profileId,
+        page,
+        pageSize,
+        searchPersonName,
+        searchItemName,
+        dateRange,
+    ]);
 
     const table = useReactTable({
         data,
@@ -104,30 +132,104 @@ export function TransactionDataTable({
         }
     };
 
+    const handleDataRangeChange = (range: DateRange | undefined) => {
+        setDateRange(range);
+        setPage(1);
+    };
+
     return (
         <>
             {/* Search Input Bar */}
             <div className="flex flex-col sm:flex-row gap-4 w-full mb-4">
-                <input
+                {/* <input
                     type="text"
                     placeholder="Search person name..."
-                    value={searchPersonName}
-                    onChange={(e) => {
-                        setSearchPersonName(e.target.value);
-                        setPage(1); // Reset to page 1 on search
-                    }}
-                    className="flex h-9 w-full sm:w-1/2 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="flex h-9 w-full sm:w-1/2 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
                 <input
                     type="text"
                     placeholder="Search item name..."
-                    value={searchItemName}
-                    onChange={(e) => {
-                        setSearchItemName(e.target.value);
-                        setPage(1); // Reset to page 1 on search
-                    }}
-                    className="flex h-9 w-full sm:w-1/2 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
+                    className="flex h-9 w-full sm:w-1/2 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    /> */}
+
+                {/* TODO: Collapsible filter */}
+                <FieldGroup className="gap-2">
+                    {/* <Collapsible>
+                        <CollapsibleTrigger
+                            render={<Button>Filters</Button>}
+                        ></CollapsibleTrigger>
+                        <CollapsibleContent> */}
+                    <FieldGroup className="flex flex-row mt-2">
+                        {/* TODO: Date range filter functionality */}
+                        <DateRangeFilterPicker
+                            value={dateRange}
+                            onChange={handleDataRangeChange}
+                            className="max-w-64"
+                        ></DateRangeFilterPicker>
+                        <Field>
+                            <FieldLabel htmlFor="input-field-person-name">
+                                Filter Person Name
+                            </FieldLabel>
+                            <div className="relative w-full">
+                                <Input
+                                    id="input-field-person-name"
+                                    type="text"
+                                    placeholder="Search person name..."
+                                    value={searchPersonName}
+                                    onChange={(e) => {
+                                        setSearchPersonName(e.target.value);
+                                        setPage(1); // Reset to page 1 on search
+                                    }}
+                                />
+                                {searchPersonName && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearchPersonName("");
+                                            setPage(1);
+                                        }}
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                        aria-label="Clear person name search"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                )}
+                            </div>
+                        </Field>
+                        <Field>
+                            <FieldLabel htmlFor="input-field-item-name">
+                                Filter Item Name
+                            </FieldLabel>
+                            <div className="relative w-full">
+                                <Input
+                                    id="input-field-item-name"
+                                    type="text"
+                                    placeholder="Search item name..."
+                                    value={searchItemName}
+                                    onChange={(e) => {
+                                        setSearchItemName(e.target.value);
+                                        setPage(1); // Reset to page 1 on search
+                                    }}
+                                />
+                                {searchItemName && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearchPersonName("");
+                                            setPage(1);
+                                        }}
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                        aria-label="Clear person name search"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                )}
+                            </div>
+                        </Field>
+                    </FieldGroup>
+                    {/* </CollapsibleContent>
+                    </Collapsible> */}
+                </FieldGroup>
             </div>
             <div className="rounded-md border w-full">
                 <Table className="w-full">
