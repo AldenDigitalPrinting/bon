@@ -29,11 +29,11 @@ import { PageNavigation } from "@/components/pagination-input";
 import { getTransactionsWithAccumulation, type PageParam } from "@/app/actions";
 import { columns, type TransactionWithAccumulation } from "./columns";
 
-const PAGE_SIZES = [25, 50, 75, 100] as const;
+const PAGE_SIZES = [10, 25, 50, 75, 100] as const;
 
 export type PageSize = (typeof PAGE_SIZES)[number];
 
-export const DEFAULT_PAGE_SIZE: PageSize = 25;
+export const DEFAULT_PAGE_SIZE: PageSize = 10;
 
 export const PAGE_SIZE_OPTIONS = PAGE_SIZES.map((i) => ({
     label: `${i} records per page`,
@@ -58,7 +58,7 @@ export function TransactionDataTable({
     const [totalCount, setTotalCount] = useState(0);
     const [isPending, startTransition] = useTransition();
 
-    const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0].value);
+    const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
     const [searchPersonName, setSearchPersonName] = useState("");
     const [searchItemName, setSearchItemName] = useState("");

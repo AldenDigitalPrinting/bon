@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+    ChevronLeft,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight,
+} from "lucide-react";
 
 interface PageNavigationProps {
     page: number;
@@ -46,13 +51,22 @@ export function PageNavigation({
     return (
         <div className="flex items-center space-x-2">
             <Button
+                className="flex items-center justify-center"
                 variant="outline"
-                size="sm"
+                size="icon"
+                onClick={() => onPageChange(1)}
+                disabled={page <= 1 || disabled}
+            >
+                <ChevronsLeft className="h-4 w-4 mr-1" />
+            </Button>
+            <Button
+                className="flex items-center justify-center"
+                variant="outline"
+                size="icon"
                 onClick={() => onPageChange(Math.max(page - 1, 1))}
                 disabled={page <= 1 || disabled}
             >
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                Previous
             </Button>
             <div className="space-x-1">
                 <Input
@@ -66,18 +80,27 @@ export function PageNavigation({
                     disabled={disabled}
                     className="h-6 w-12 text-center font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 ></Input>
-                <span className="text-sm font-medium text-muted-foreground">
+                <span className="text-icon font-medium text-muted-foreground">
                     / {totalPages || 1}
                 </span>
             </div>
             <Button
+                className="flex items-center justify-center"
                 variant="outline"
-                size="sm"
+                size="icon"
                 onClick={() => onPageChange(Math.max(page + 1, 1))}
                 disabled={page >= totalPages || disabled}
             >
-                Next
                 <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+            <Button
+                className="flex items-center justify-center"
+                variant="outline"
+                size="icon"
+                onClick={() => onPageChange(totalPages)}
+                disabled={page >= totalPages || disabled}
+            >
+                <ChevronsRight className="h-4 w-4 mr-1" />
             </Button>
         </div>
     );
