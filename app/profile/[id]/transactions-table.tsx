@@ -28,7 +28,7 @@ import {
 //     CollapsibleContent,
 //     CollapsibleTrigger,
 // } from "@/components/ui/collapsible";
-import { Button } from "@/components/ui/button";
+import { Marker } from "@/components/ui/marker";
 import { DateRangeFilterPicker } from "@/app/profile/[id]/date-range-picker";
 import { Input } from "@/components/ui/input";
 import { PageNavigation } from "@/components/pagination-input";
@@ -36,6 +36,7 @@ import { getTransactionsWithAccumulation, type PageParam } from "@/app/actions";
 import { columns, type TransactionWithAccumulation } from "./columns";
 import { DateRange } from "react-day-picker";
 import { X } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 const PAGE_SIZES = [10, 25, 50, 75, 100] as const;
 
@@ -264,9 +265,12 @@ export function TransactionDataTable({
                             <TableRow>
                                 <TableCell
                                     colSpan={columns.length}
-                                    className="h-24 text-center"
+                                    className="h-24"
                                 >
-                                    Loading page {page}...
+                                    <Marker className="flex items-center justify-center text-center">
+                                        <Spinner />
+                                        Fetching transactions data...
+                                    </Marker>
                                 </TableCell>
                             </TableRow>
                         ) : table.getRowModel().rows?.length ? (
@@ -310,9 +314,9 @@ export function TransactionDataTable({
                 </Table>
             </div>
             <div className="flex items-center w-full px-2">
-                <div className="text-sm text-muted-foreground">
+                <Marker className="max-w-max">
                     Displaying: {data.length} / {totalCount}
-                </div>
+                </Marker>
                 <div className="m-auto">
                     <PageNavigation
                         page={typeof page === "number" ? page : totalPages}

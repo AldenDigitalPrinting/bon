@@ -15,6 +15,7 @@ import {
     DialogClose,
     DialogDescription,
 } from "@/components/ui/dialog";
+import { Spinner } from "./ui/spinner";
 
 interface DeleteProfileDialogProps {
     id: string;
@@ -93,7 +94,14 @@ export function DeleteProfileDialog({
                         onClick={handleDelete}
                         disabled={isDeleting}
                     >
-                        {isDeleting ? "Deleting..." : "Confirm Delete"}
+                        {isDeleting ? (
+                            <>
+                                <Spinner data-icon="inline-start" />
+                                {"Deleting"}
+                            </>
+                        ) : (
+                            "Confirm Delete"
+                        )}
                     </Button>
                 </DialogFooter>
             </DialogContent>

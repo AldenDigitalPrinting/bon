@@ -16,6 +16,7 @@ import {
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "./ui/spinner";
 
 export function CreateProfileDialog() {
     const [open, setOpen] = useState(false);
@@ -101,7 +102,14 @@ export function CreateProfileDialog() {
                             }
                         ></DialogClose>
                         <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? "Creating..." : "Create"}
+                            {isSubmitting ? (
+                                <>
+                                    <Spinner data-icon="inline-start" />
+                                    {"Creating"}
+                                </>
+                            ) : (
+                                "Create"
+                            )}
                         </Button>
                     </DialogFooter>
                 </form>
