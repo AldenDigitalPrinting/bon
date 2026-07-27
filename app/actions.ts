@@ -72,13 +72,14 @@ export async function deleteProfile(id: string | null) {
 
 export type PageParam = number | "last";
 
-// TODO: Seach person name, item name
 export async function getTransactionsWithAccumulation(
     profileId: string,
     page: PageParam,
     pageSize: number = 100,
     searchPersonName?: string,
     searchItemName?: string,
+    startDate?: string,
+    endDate?: string,
 ) {
     try {
         const where: Prisma.TransactionWhereInput = { profileId };
@@ -97,6 +98,26 @@ export async function getTransactionsWithAccumulation(
                 mode: "insensitive",
             };
             console.log(`searching item name: ${searchItemName.trim()}`);
+        }
+
+        if (startDate || endDate) {
+            where.date = {};
+
+            if (startDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                where.date.gte = start;
+            }
+
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                where.date.lte = end;
+            } else if (startDate) {
+                const end = new Date(startDate);
+                end.setHours(23, 59, 59, 999);
+                where.date.lte = end;
+            }
         }
 
         const totalCount = await prisma.transaction.count({
