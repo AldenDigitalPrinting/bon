@@ -36,7 +36,7 @@ export function DateRangeFilterPicker({
                             <Button
                                 variant="outline"
                                 id="date-picker-range"
-                                className="justify-start px-2.5 font-normal flex w-full"
+                                className="justify-start font-normal flex w-full"
                             >
                                 <CalendarIcon data-icon="inline-start" />
                                 {value?.from ? (
@@ -64,7 +64,7 @@ export function DateRangeFilterPicker({
                                                 e.stopPropagation();
                                                 onChange?.(undefined);
                                             }}
-                                            className="mr-0.5 rounded-full p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                            className="rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                                             aria-label="Clear date range filter"
                                         >
                                             <X className="h-4 w-4" />
