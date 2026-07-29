@@ -29,7 +29,7 @@ import {
     InputGroupAddon,
     InputGroupInput,
 } from "@/components/ui/input-group";
-
+import { buttonVariants } from "@/components/ui/button";
 // import {
 //     Collapsible,
 //     CollapsibleContent,
@@ -37,13 +37,13 @@ import {
 // } from "@/components/ui/collapsible";
 import { Marker } from "@/components/ui/marker";
 import { DateRangeFilterPicker } from "@/app/profile/[id]/date-range-picker";
-import { Input } from "@/components/ui/input";
 import { PageNavigation } from "@/components/pagination-input";
 import { getTransactionsWithAccumulation, type PageParam } from "@/app/actions";
 import { columns, type TransactionWithAccumulation } from "./columns";
 import { DateRange } from "react-day-picker";
 import { X } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import Link from "next/link";
 
 const PAGE_SIZES = [10, 25, 50, 75, 100] as const;
 
@@ -161,7 +161,7 @@ export function TransactionDataTable({
                     /> */}
 
                 {/* TODO: Collapsible filter */}
-                <FieldGroup className="gap-2">
+                <FieldGroup className="gap-2 flex flex-row items-end">
                     {/* <Collapsible>
                         <CollapsibleTrigger
                             render={<Button>Filters</Button>}
@@ -237,6 +237,20 @@ export function TransactionDataTable({
                                 )}
                             </InputGroup>
                         </Field>
+                    </FieldGroup>
+                    <FieldGroup className="max-w-max min-w-28">
+                        <Link
+                            href={`/profile/${profileId}/new`}
+                            className={
+                                "min-w-12" +
+                                buttonVariants({
+                                    variant: "default",
+                                    size: "lg",
+                                })
+                            }
+                        >
+                            Add Record
+                        </Link>
                     </FieldGroup>
                     {/* </CollapsibleContent>
                     </Collapsible> */}
