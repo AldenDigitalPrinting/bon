@@ -23,6 +23,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
+} from "@/components/ui/input-group";
+
 // import {
 //     Collapsible,
 //     CollapsibleContent,
@@ -171,10 +178,9 @@ export function TransactionDataTable({
                             <FieldLabel htmlFor="input-field-person-name">
                                 Filter Person Name
                             </FieldLabel>
-                            <div className="relative w-full">
-                                <Input
+                            <InputGroup className="w-full">
+                                <InputGroupInput
                                     id="input-field-person-name"
-                                    type="text"
                                     placeholder="Search person name..."
                                     value={searchPersonName}
                                     onChange={(e) => {
@@ -183,26 +189,28 @@ export function TransactionDataTable({
                                     }}
                                 />
                                 {searchPersonName && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setSearchPersonName("");
-                                            setPage(1);
-                                        }}
-                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                        aria-label="Clear person name search"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </button>
+                                    <InputGroupAddon align="inline-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSearchPersonName("");
+                                                setPage(1);
+                                            }}
+                                            className="rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                            aria-label="Clear person name search"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </InputGroupAddon>
                                 )}
-                            </div>
+                            </InputGroup>
                         </Field>
                         <Field>
                             <FieldLabel htmlFor="input-field-item-name">
                                 Filter Item Name
                             </FieldLabel>
-                            <div className="relative w-full">
-                                <Input
+                            <InputGroup className="w-full">
+                                <InputGroupInput
                                     id="input-field-item-name"
                                     type="text"
                                     placeholder="Search item name..."
@@ -213,19 +221,21 @@ export function TransactionDataTable({
                                     }}
                                 />
                                 {searchItemName && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setSearchPersonName("");
-                                            setPage(1);
-                                        }}
-                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                        aria-label="Clear person name search"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </button>
+                                    <InputGroupAddon align="inline-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSearchItemName("");
+                                                setPage(1);
+                                            }}
+                                            className="rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                            aria-label="Clear person name search"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </InputGroupAddon>
                                 )}
-                            </div>
+                            </InputGroup>
                         </Field>
                     </FieldGroup>
                     {/* </CollapsibleContent>
