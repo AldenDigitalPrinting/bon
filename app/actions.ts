@@ -5,11 +5,12 @@ import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 // for testing
-// const sleep = (ms: number): Promise<void> => {
-//     return new Promise((resolve) => setTimeout(resolve, ms));
-// };
+const sleep = (ms: number = 0): Promise<void> => {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+};
 
 export async function getProfiles() {
+    await sleep();
     try {
         const profiles = await prisma.profile.findMany({
             orderBy: {
@@ -25,6 +26,7 @@ export async function getProfiles() {
 }
 
 export async function createProfile(name: string | null) {
+    await sleep();
     if (!name) return { success: false, error: "Name cannot be empty." };
     try {
         const newProfile = await prisma.profile.create({
@@ -51,6 +53,7 @@ export async function createProfile(name: string | null) {
 }
 
 export async function deleteProfile(id: string | null) {
+    await sleep();
     if (!id) return { success: false, error: "ID cannot be empty." };
     try {
         const profile = await prisma.profile.findFirst({ where: { id: id } });
@@ -81,6 +84,7 @@ export async function getTransactionsWithAccumulation(
     startDate?: string,
     endDate?: string,
 ) {
+    await sleep();
     try {
         const where: Prisma.TransactionWhereInput = { profileId };
 
@@ -153,5 +157,60 @@ export async function getTransactionsWithAccumulation(
             success: false,
             error: `Failed to get transactions: ${error}`,
         };
+    }
+}
+
+export interface TransactionProps {
+    profileId: string;
+    personName: string;
+    itemName: string;
+    itemPrice?: number;
+    date: Date;
+    itemQuantity?: number;
+    debtAdded?: number;
+    debtPaid?: number;
+}
+
+export async function createTransaction({
+    profileId,
+    personName,
+    itemName,
+    itemPrice,
+    date,
+    itemQuantity,
+    debtAdded = 0,
+    debtPaid = 0,
+}: TransactionProps) {
+    const latestTransaction = await prisma.transaction.findFirst({
+        where: { profileId },
+        orderBy: [{ date: "desc" }, { createdAt: "desc" }, { id: "desc" }],
+    });
+
+    const previousAccumulation = latestTransaction?.accumulation ?? 0;
+
+    const accumulation = previousAccumulation + debtAdded - debtPaid;
+
+    try {
+        const data = {
+            profileId,
+            date,
+            personName,
+            itemName,
+            itemQuantity,
+            itemPrice,
+            debtAdded,
+            debtPaid,
+            accumulation,
+        };
+
+        await prisma.transaction.create({
+            data,
+        });
+
+        revalidatePath(`/profile/${profileId}`);
+        return { success: true, data };
+    } catch (error) {
+        console.error("Error creating transaction:", error);
+        return { success: false, error: "Failed to create transaction." };
     }
 }
