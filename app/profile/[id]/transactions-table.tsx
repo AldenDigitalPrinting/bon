@@ -14,7 +14,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+    Field,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+} from "@/components/ui/field";
 import {
     Select,
     SelectContent,
@@ -29,21 +35,23 @@ import {
     InputGroupAddon,
     InputGroupInput,
 } from "@/components/ui/input-group";
-import { buttonVariants } from "@/components/ui/button";
-// import {
-//     Collapsible,
-//     CollapsibleContent,
-//     CollapsibleTrigger,
-// } from "@/components/ui/collapsible";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Marker } from "@/components/ui/marker";
 import { DateRangeFilterPicker } from "@/app/profile/[id]/date-range-picker";
 import { PageNavigation } from "@/components/pagination-input";
-import { getTransactionsWithAccumulation, type PageParam } from "@/app/actions";
+import {
+    getTransactionsWithAccumulation,
+    type PageParam,
+    type TransactionType,
+} from "@/app/actions";
 import { columns, type TransactionWithAccumulation } from "./columns";
 import { DateRange } from "react-day-picker";
-import { X } from "lucide-react";
+import { X, Plus, FunnelX } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
 import Link from "next/link";
+import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const PAGE_SIZES = [10, 25, 50, 75, 100] as const;
 
@@ -67,7 +75,6 @@ export function TransactionDataTable({
     verticalBorder = false,
     initialPage = "last",
 }: TransactionDataTableProps) {
-    // const [sorting, setSorting] = useState<SortingState>([]);
     const [data, setData] = useState<TransactionWithAccumulation[]>([]);
     const [page, setPage] = useState<PageParam>(initialPage);
     const [totalPages, setTotalPages] = useState(1);
@@ -76,30 +83,41 @@ export function TransactionDataTable({
 
     const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
-    const [searchPersonName, setSearchPersonName] = useState("");
-    const [searchItemName, setSearchItemName] = useState("");
-
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(
-        undefined,
-    );
+    // Filters
+    const [filterSearchPersonName, setFilterSearchPersonName] = useState("");
+    const [filterSearchItemName, setFilterSearchItemName] = useState("");
+    const [filterTransactionType, setFilterTransactionType] =
+        useState<TransactionType>();
+    const [filterDateRange, setFilterDateRange] = useState<
+        DateRange | undefined
+    >(undefined);
+    const [filterEnabled, setFilterEnabled] = useState(false);
 
     useEffect(() => {
+        setFilterEnabled(
+            filterSearchPersonName !== "" ||
+                filterSearchItemName !== "" ||
+                filterTransactionType !== undefined ||
+                filterDateRange !== undefined,
+        );
+
         startTransition(async () => {
-            const startDateStr = dateRange?.from
-                ? dateRange.from.toISOString()
+            const startDateStr = filterDateRange?.from
+                ? filterDateRange.from.toISOString()
                 : undefined;
-            const endDateStr = dateRange?.to
-                ? dateRange.to.toISOString()
+            const endDateStr = filterDateRange?.to
+                ? filterDateRange.to.toISOString()
                 : undefined;
 
             const res = await getTransactionsWithAccumulation(
                 profileId,
                 page,
                 Number(pageSize),
-                searchPersonName,
-                searchItemName,
+                filterSearchPersonName,
+                filterSearchItemName,
                 startDateStr,
                 endDateStr,
+                filterTransactionType,
             );
             if (res.success && res.data && res.pagination) {
                 setData(res.data);
@@ -111,9 +129,10 @@ export function TransactionDataTable({
         profileId,
         page,
         pageSize,
-        searchPersonName,
-        searchItemName,
-        dateRange,
+        filterSearchPersonName,
+        filterSearchItemName,
+        filterDateRange,
+        filterTransactionType,
     ]);
 
     const table = useReactTable({
@@ -123,12 +142,6 @@ export function TransactionDataTable({
 
         manualPagination: true,
         pageCount: totalPages,
-
-        // onSortingChange: setSorting,
-        // getSortedRowModel: getSortedRowModel(),
-        // state: {
-        //     sorting,
-        // },
     });
 
     const handlePageSizeChange = (size: string | null) => {
@@ -141,59 +154,42 @@ export function TransactionDataTable({
     };
 
     const handleDataRangeChange = (range: DateRange | undefined) => {
-        setDateRange(range);
+        setFilterDateRange(range);
         setPage(1);
     };
 
     return (
         <>
-            {/* Search Input Bar */}
-            <div className="flex flex-col sm:flex-row gap-4 w-full mb-4">
-                {/* <input
-                    type="text"
-                    placeholder="Search person name..."
-                    className="flex h-9 w-full sm:w-1/2 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-                <input
-                    type="text"
-                    placeholder="Search item name..."
-                    className="flex h-9 w-full sm:w-1/2 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                    /> */}
-
-                {/* TODO: Collapsible filter */}
-                <FieldGroup className="gap-2 flex flex-row items-end">
-                    {/* <Collapsible>
-                        <CollapsibleTrigger
-                            render={<Button>Filters</Button>}
-                        ></CollapsibleTrigger>
-                        <CollapsibleContent> */}
-                    <FieldGroup className="flex flex-row mt-2">
-                        {/* TODO: Date range filter functionality */}
-                        <DateRangeFilterPicker
-                            value={dateRange}
-                            onChange={handleDataRangeChange}
-                            className="max-w-64"
-                        ></DateRangeFilterPicker>
-                        <Field>
-                            <FieldLabel htmlFor="input-field-person-name">
-                                Filter Person Name
-                            </FieldLabel>
-                            <InputGroup className="w-full">
+            <div className="flex flex-col sm:flex-row w-full mb-4">
+                <FieldGroup className="gap-2 flex flex-col">
+                    <FieldLegend>Filters</FieldLegend>
+                    <FieldGroup className="flex flex-row w-auto">
+                        <Field className="max-w-max">
+                            <DateRangeFilterPicker
+                                value={filterDateRange}
+                                onChange={handleDataRangeChange}
+                                className="max-w-64"
+                            ></DateRangeFilterPicker>
+                        </Field>
+                        <Field className="max-w-max">
+                            <InputGroup>
                                 <InputGroupInput
                                     id="input-field-person-name"
                                     placeholder="Search person name..."
-                                    value={searchPersonName}
+                                    value={filterSearchPersonName}
                                     onChange={(e) => {
-                                        setSearchPersonName(e.target.value);
-                                        setPage(1); // Reset to page 1 on search
+                                        setFilterSearchPersonName(
+                                            e.target.value,
+                                        );
+                                        setPage(1);
                                     }}
                                 />
-                                {searchPersonName && (
+                                {filterSearchPersonName && (
                                     <InputGroupAddon align="inline-end">
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                setSearchPersonName("");
+                                                setFilterSearchPersonName("");
                                                 setPage(1);
                                             }}
                                             className="rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -205,27 +201,24 @@ export function TransactionDataTable({
                                 )}
                             </InputGroup>
                         </Field>
-                        <Field>
-                            <FieldLabel htmlFor="input-field-item-name">
-                                Filter Item Name
-                            </FieldLabel>
-                            <InputGroup className="w-full">
+                        <Field className="max-w-max">
+                            <InputGroup>
                                 <InputGroupInput
                                     id="input-field-item-name"
                                     type="text"
                                     placeholder="Search item name..."
-                                    value={searchItemName}
+                                    value={filterSearchItemName}
                                     onChange={(e) => {
-                                        setSearchItemName(e.target.value);
+                                        setFilterSearchItemName(e.target.value);
                                         setPage(1); // Reset to page 1 on search
                                     }}
                                 />
-                                {searchItemName && (
+                                {filterSearchItemName && (
                                     <InputGroupAddon align="inline-end">
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                setSearchItemName("");
+                                                setFilterSearchItemName("");
                                                 setPage(1);
                                             }}
                                             className="rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -237,25 +230,70 @@ export function TransactionDataTable({
                                 )}
                             </InputGroup>
                         </Field>
+                        <Field className="w-auto">
+                            <ToggleGroup
+                                className="flex flex-row gap-1"
+                                value={
+                                    filterTransactionType
+                                        ? [filterTransactionType]
+                                        : []
+                                }
+                                onValueChange={(value) => {
+                                    setFilterTransactionType(
+                                        value[0] as TransactionType,
+                                    );
+                                    setPage(1);
+                                }}
+                            >
+                                <ToggleGroupItem
+                                    variant="outline"
+                                    size="lg"
+                                    value={"payment" as TransactionType}
+                                >
+                                    Payment
+                                </ToggleGroupItem>
+                                <ToggleGroupItem
+                                    variant="outline"
+                                    size="lg"
+                                    value={"debt" as TransactionType}
+                                >
+                                    Debt
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                        </Field>
+                        {filterEnabled && (
+                            <Field className="max-w-fit">
+                                <Button
+                                    variant={"ghost"}
+                                    onClick={() => {
+                                        setFilterSearchItemName("");
+                                        setFilterSearchPersonName("");
+                                        setFilterTransactionType(undefined);
+                                        setFilterDateRange(undefined);
+                                        setPage(1);
+                                    }}
+                                >
+                                    <FunnelX /> Clear Filters
+                                </Button>
+                            </Field>
+                        )}
                     </FieldGroup>
-                    <FieldGroup className="max-w-max min-w-28">
-                        <Link
-                            href={`/profile/${profileId}/new`}
-                            className={
-                                "min-w-12" +
-                                buttonVariants({
-                                    variant: "default",
-                                    size: "lg",
-                                })
-                            }
-                        >
-                            Add Record
-                        </Link>
-                    </FieldGroup>
-                    {/* </CollapsibleContent>
-                    </Collapsible> */}
                 </FieldGroup>
             </div>
+            {/* Where should i put this
+            <Link
+                href={`/profile/${profileId}/new`}
+                className={
+                    "min-w-12 whitespace-nowrap " +
+                    buttonVariants({
+                        variant: "default",
+                        size: "lg",
+                    })
+                }
+            >
+                <Plus /> Add Record
+            </Link>
+            */}
             <div className="rounded-md border w-full">
                 <Table className="w-full">
                     <TableHeader>
