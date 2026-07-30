@@ -26,8 +26,7 @@ export function DateRangeFilterPicker({
     onChange,
 }: DateRangeFilterPickerProps) {
     return (
-        <Field className={className}>
-            <FieldLabel htmlFor="date-picker-range">Filter Date</FieldLabel>
+        <>
             <Popover>
                 <PopoverTrigger
                     nativeButton={false}
@@ -88,6 +87,6 @@ export function DateRangeFilterPicker({
                     />
                 </PopoverContent>
             </Popover>
-        </Field>
+        </>
     );
 }

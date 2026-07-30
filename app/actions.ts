@@ -74,6 +74,7 @@ export async function deleteProfile(id: string | null) {
 }
 
 export type PageParam = number | "last";
+export type TransactionType = "payment" | "debt" | undefined;
 
 export async function getTransactionsWithAccumulation(
     profileId: string,
@@ -83,6 +84,7 @@ export async function getTransactionsWithAccumulation(
     searchItemName?: string,
     startDate?: string,
     endDate?: string,
+    transactionType?: TransactionType,
 ) {
     await sleep();
     try {
@@ -93,7 +95,6 @@ export async function getTransactionsWithAccumulation(
                 contains: searchPersonName.trim(),
                 mode: "insensitive",
             };
-            console.log(`searching person name: ${searchPersonName.trim()}`);
         }
 
         if (searchItemName?.trim()) {
@@ -101,7 +102,18 @@ export async function getTransactionsWithAccumulation(
                 contains: searchItemName.trim(),
                 mode: "insensitive",
             };
-            console.log(`searching item name: ${searchItemName.trim()}`);
+        }
+
+        if (transactionType?.trim()) {
+            if (transactionType === "debt") {
+                where.debtAdded = {
+                    not: 0,
+                };
+            } else if (transactionType === "payment") {
+                where.debtPaid = {
+                    not: 0,
+                };
+            }
         }
 
         if (startDate || endDate) {
