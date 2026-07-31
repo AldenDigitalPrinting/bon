@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useRef, useTransition } from "react";
 import {
     flexRender,
     getCoreRowModel,
@@ -14,13 +14,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import {
-    Field,
-    FieldGroup,
-    FieldLabel,
-    FieldLegend,
-    FieldSet,
-} from "@/components/ui/field";
+import { Field, FieldLabel } from "@/components/ui/field";
 import {
     Select,
     SelectContent,
@@ -35,7 +29,7 @@ import {
     InputGroupAddon,
     InputGroupInput,
 } from "@/components/ui/input-group";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Marker } from "@/components/ui/marker";
 import { DateRangeFilterPicker } from "@/app/profile/[id]/date-range-picker";
 import { PageNavigation } from "@/components/pagination-input";
@@ -46,14 +40,12 @@ import {
 } from "@/app/actions";
 import { columns, type TransactionWithAccumulation } from "./columns";
 import { DateRange } from "react-day-picker";
-import { X, Plus, FunnelX } from "lucide-react";
+import { X, FunnelX, Search, Filter } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
-import { Switch } from "@/components/ui/switch";
-import Link from "next/link";
-import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const PAGE_SIZES = [10, 25, 50, 75, 100] as const;
+const DEBOUNCE_MS = 300;
 
 export type PageSize = (typeof PAGE_SIZES)[number];
 
@@ -91,40 +83,47 @@ export function TransactionDataTable({
     const [filterDateRange, setFilterDateRange] = useState<
         DateRange | undefined
     >(undefined);
-    const [filterEnabled, setFilterEnabled] = useState(false);
+
+    const activeFilterCount =
+        (filterSearchPersonName !== "" ? 1 : 0) +
+        (filterSearchItemName !== "" ? 1 : 0) +
+        (filterDateRange !== undefined ? 1 : 0) +
+        (filterTransactionType !== undefined ? 1 : 0);
+
+    const didMount = useRef(false);
 
     useEffect(() => {
-        setFilterEnabled(
-            filterSearchPersonName !== "" ||
-                filterSearchItemName !== "" ||
-                filterTransactionType !== undefined ||
-                filterDateRange !== undefined,
-        );
+        const delay = didMount.current ? DEBOUNCE_MS : 0;
+        didMount.current = true;
 
-        startTransition(async () => {
-            const startDateStr = filterDateRange?.from
-                ? filterDateRange.from.toISOString()
-                : undefined;
-            const endDateStr = filterDateRange?.to
-                ? filterDateRange.to.toISOString()
-                : undefined;
+        const timer = setTimeout(() => {
+            startTransition(async () => {
+                const startDateStr = filterDateRange?.from
+                    ? filterDateRange.from.toISOString()
+                    : undefined;
+                const endDateStr = filterDateRange?.to
+                    ? filterDateRange.to.toISOString()
+                    : undefined;
 
-            const res = await getTransactionsWithAccumulation(
-                profileId,
-                page,
-                Number(pageSize),
-                filterSearchPersonName,
-                filterSearchItemName,
-                startDateStr,
-                endDateStr,
-                filterTransactionType,
-            );
-            if (res.success && res.data && res.pagination) {
-                setData(res.data);
-                setTotalPages(res.pagination.totalPages);
-                setTotalCount(res.pagination.totalCount);
-            }
-        });
+                const res = await getTransactionsWithAccumulation(
+                    profileId,
+                    page,
+                    Number(pageSize),
+                    filterSearchPersonName,
+                    filterSearchItemName,
+                    startDateStr,
+                    endDateStr,
+                    filterTransactionType,
+                );
+                if (res.success && res.data && res.pagination) {
+                    setData(res.data);
+                    setTotalPages(res.pagination.totalPages);
+                    setTotalCount(res.pagination.totalCount);
+                }
+            });
+        }, delay);
+
+        return () => clearTimeout(timer);
     }, [
         profileId,
         page,
@@ -158,142 +157,146 @@ export function TransactionDataTable({
         setPage(1);
     };
 
+    const clearAllFilters = () => {
+        setFilterSearchItemName("");
+        setFilterSearchPersonName("");
+        setFilterTransactionType(undefined);
+        setFilterDateRange(undefined);
+        setPage(1);
+    };
+
     return (
         <>
-            <div className="flex flex-col sm:flex-row w-full mb-4">
-                <FieldGroup className="gap-2 flex flex-col">
-                    <FieldLegend>Filters</FieldLegend>
-                    <FieldGroup className="flex flex-row w-auto">
-                        <Field className="max-w-max">
-                            <DateRangeFilterPicker
-                                value={filterDateRange}
-                                onChange={handleDataRangeChange}
-                                className="max-w-64"
-                            ></DateRangeFilterPicker>
-                        </Field>
-                        <Field className="max-w-max">
-                            <InputGroup>
-                                <InputGroupInput
-                                    id="input-field-person-name"
-                                    placeholder="Search person name..."
-                                    value={filterSearchPersonName}
-                                    onChange={(e) => {
-                                        setFilterSearchPersonName(
-                                            e.target.value,
-                                        );
-                                        setPage(1);
-                                    }}
-                                />
-                                {filterSearchPersonName && (
-                                    <InputGroupAddon align="inline-end">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setFilterSearchPersonName("");
-                                                setPage(1);
-                                            }}
-                                            className="rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                            aria-label="Clear person name search"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </button>
-                                    </InputGroupAddon>
-                                )}
-                            </InputGroup>
-                        </Field>
-                        <Field className="max-w-max">
-                            <InputGroup>
-                                <InputGroupInput
-                                    id="input-field-item-name"
-                                    type="text"
-                                    placeholder="Search item name..."
-                                    value={filterSearchItemName}
-                                    onChange={(e) => {
-                                        setFilterSearchItemName(e.target.value);
-                                        setPage(1); // Reset to page 1 on search
-                                    }}
-                                />
-                                {filterSearchItemName && (
-                                    <InputGroupAddon align="inline-end">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setFilterSearchItemName("");
-                                                setPage(1);
-                                            }}
-                                            className="rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                                            aria-label="Clear person name search"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </button>
-                                    </InputGroupAddon>
-                                )}
-                            </InputGroup>
-                        </Field>
-                        <Field className="w-auto">
-                            <ToggleGroup
-                                className="flex flex-row gap-1"
-                                value={
-                                    filterTransactionType
-                                        ? [filterTransactionType]
-                                        : []
-                                }
-                                onValueChange={(value) => {
-                                    setFilterTransactionType(
-                                        value[0] as TransactionType,
+            <div className="mb-4 w-full rounded-lg border bg-card p-3">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                        <Filter className="size-4 text-muted-foreground" />
+                        Filters
+                    </div>
+                    {activeFilterCount > 0 && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearAllFilters}
+                        >
+                            <FunnelX />
+                            Clear filters ({activeFilterCount})
+                        </Button>
+                    )}
+                </div>
+                <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
+                    <Field className="md:w-60">
+                        <FieldLabel htmlFor="date-picker-range">
+                            Date Range
+                        </FieldLabel>
+                        <DateRangeFilterPicker
+                            value={filterDateRange}
+                            onChange={handleDataRangeChange}
+                        />
+                    </Field>
+                    <Field className="md:w-56">
+                        <FieldLabel htmlFor="input-field-person-name">
+                            Person Name
+                        </FieldLabel>
+                        <InputGroup>
+                            <InputGroupAddon align="inline-start">
+                                <Search className="size-4" />
+                            </InputGroupAddon>
+                            <InputGroupInput
+                                id="input-field-person-name"
+                                placeholder="Search person name..."
+                                value={filterSearchPersonName}
+                                onChange={(e) => {
+                                    setFilterSearchPersonName(
+                                        e.target.value,
                                     );
                                     setPage(1);
                                 }}
+                            />
+                            {filterSearchPersonName && (
+                                <InputGroupAddon align="inline-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setFilterSearchPersonName("");
+                                            setPage(1);
+                                        }}
+                                        className="rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                        aria-label="Clear person name search"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </InputGroupAddon>
+                            )}
+                        </InputGroup>
+                    </Field>
+                    <Field className="md:w-56">
+                        <FieldLabel htmlFor="input-field-item-name">
+                            Item Name
+                        </FieldLabel>
+                        <InputGroup>
+                            <InputGroupAddon align="inline-start">
+                                <Search className="size-4" />
+                            </InputGroupAddon>
+                            <InputGroupInput
+                                id="input-field-item-name"
+                                type="text"
+                                placeholder="Search item name..."
+                                value={filterSearchItemName}
+                                onChange={(e) => {
+                                    setFilterSearchItemName(e.target.value);
+                                    setPage(1);
+                                }}
+                            />
+                            {filterSearchItemName && (
+                                <InputGroupAddon align="inline-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setFilterSearchItemName("");
+                                            setPage(1);
+                                        }}
+                                        className="rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                                        aria-label="Clear item name search"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </InputGroupAddon>
+                            )}
+                        </InputGroup>
+                    </Field>
+                    <Field className="md:w-auto">
+                        <FieldLabel>Type</FieldLabel>
+                        <ToggleGroup
+                            className="flex flex-row gap-1"
+                            value={
+                                filterTransactionType
+                                    ? [filterTransactionType]
+                                    : []
+                            }
+                            onValueChange={(value) => {
+                                setFilterTransactionType(
+                                    value[0] as TransactionType,
+                                );
+                                setPage(1);
+                            }}
+                        >
+                            <ToggleGroupItem
+                                variant="outline"
+                                value={"payment" as TransactionType}
                             >
-                                <ToggleGroupItem
-                                    variant="outline"
-                                    size="lg"
-                                    value={"payment" as TransactionType}
-                                >
-                                    Payment
-                                </ToggleGroupItem>
-                                <ToggleGroupItem
-                                    variant="outline"
-                                    size="lg"
-                                    value={"debt" as TransactionType}
-                                >
-                                    Debt
-                                </ToggleGroupItem>
-                            </ToggleGroup>
-                        </Field>
-                        {filterEnabled && (
-                            <Field className="max-w-fit">
-                                <Button
-                                    variant={"ghost"}
-                                    onClick={() => {
-                                        setFilterSearchItemName("");
-                                        setFilterSearchPersonName("");
-                                        setFilterTransactionType(undefined);
-                                        setFilterDateRange(undefined);
-                                        setPage(1);
-                                    }}
-                                >
-                                    <FunnelX /> Clear Filters
-                                </Button>
-                            </Field>
-                        )}
-                    </FieldGroup>
-                </FieldGroup>
+                                Payment
+                            </ToggleGroupItem>
+                            <ToggleGroupItem
+                                variant="outline"
+                                value={"debt" as TransactionType}
+                            >
+                                Debt
+                            </ToggleGroupItem>
+                        </ToggleGroup>
+                    </Field>
+                </div>
             </div>
-            {/* Where should i put this
-            <Link
-                href={`/profile/${profileId}/new`}
-                className={
-                    "min-w-12 whitespace-nowrap " +
-                    buttonVariants({
-                        variant: "default",
-                        size: "lg",
-                    })
-                }
-            >
-                <Plus /> Add Record
-            </Link>
-            */}
             <div className="rounded-md border w-full">
                 <Table className="w-full">
                     <TableHeader>
@@ -346,7 +349,9 @@ export function TransactionDataTable({
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell
                                             className={
-                                                verticalBorder ? "border-r" : ""
+                                                verticalBorder
+                                                    ? "border-r"
+                                                    : ""
                                             }
                                             key={cell.id}
                                         >
