@@ -59,10 +59,6 @@ function Header({ title, className }: HeaderProps) {
     return <span className={["", className].join(" ")}>{title}</span>;
 }
 
-// TODO: Filter by date range
-
-// TODO: Filter by person name
-
 export type TransactionWithAccumulation = Transaction & {
     accumulation: number;
 };

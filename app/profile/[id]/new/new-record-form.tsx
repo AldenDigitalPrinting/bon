@@ -93,7 +93,6 @@ export function NewRecordForm({
         const personName = formData.get("personName")?.toString();
         const dateRaw = formData.get("date")?.toString();
 
-        // TODO: show shadcn error on input element
         // TODO: edit records
         if (!personName) {
             newErrors.personName = "Name is required.";
