@@ -10,11 +10,19 @@ interface PageProps {
 
 export default async function SettingsPage({ params }: PageProps) {
     const { id } = await params;
-    const profile = await prisma.profile.findUnique({ where: { id } });
+    const profile = await prisma.profile.findUnique({
+        where: { id },
+        include: { _count: { select: { transactions: true } } },
+    });
 
     if (!profile) {
         notFound();
     }
 
-    return <SettingsForm profile={profile} />;
+    return (
+        <SettingsForm
+            profile={profile}
+            transactionCount={profile._count.transactions}
+        />
+    );
 }

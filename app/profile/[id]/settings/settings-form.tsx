@@ -28,9 +28,13 @@ import { Spinner } from "@/components/ui/spinner";
 
 interface SettingsFormProps {
     profile: Profile;
+    transactionCount: number;
 }
 
-export function SettingsForm({ profile }: SettingsFormProps) {
+export function SettingsForm({
+    profile,
+    transactionCount,
+}: SettingsFormProps) {
     const router = useRouter();
     const [name, setName] = useState(profile.name);
     const [isSaving, setIsSaving] = useState(false);
@@ -95,18 +99,7 @@ export function SettingsForm({ profile }: SettingsFormProps) {
 
             <Card className="w-full">
                 <CardHeader>
-                    <CardTitle>Profile UUID</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <code className="text-sm bg-muted px-2 py-1 rounded break-all">
-                        {profile.id}
-                    </code>
-                </CardContent>
-            </Card>
-
-            <Card className="w-full">
-                <CardHeader>
-                    <CardTitle>Profile Name</CardTitle>
+                    <CardTitle>Properties</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form
@@ -114,6 +107,12 @@ export function SettingsForm({ profile }: SettingsFormProps) {
                         className="flex flex-col gap-4"
                     >
                         <FieldGroup>
+                            <Field>
+                                <FieldLabel>Profile UUID</FieldLabel>
+                                <code className="text-sm bg-muted px-2 py-1 rounded break-all">
+                                    {profile.id}
+                                </code>
+                            </Field>
                             <Field>
                                 <FieldLabel htmlFor="profile-name">
                                     Name
@@ -127,6 +126,18 @@ export function SettingsForm({ profile }: SettingsFormProps) {
                                     disabled={isSaving}
                                     required
                                 />
+                            </Field>
+                            <Field>
+                                <FieldLabel>
+                                    Transactions
+                                </FieldLabel>
+                                <p className="text-sm text-muted-foreground">
+                                    {transactionCount.toLocaleString()}{" "}
+                                    transaction
+                                    {transactionCount === 1
+                                        ? ""
+                                        : "s"}
+                                </p>
                             </Field>
                         </FieldGroup>
                         <div className="flex justify-end">
@@ -149,30 +160,30 @@ export function SettingsForm({ profile }: SettingsFormProps) {
 
             <Separator className="w-full" />
 
-            <Card className="w-full border-destructive/30">
-                <CardHeader>
-                    <CardTitle className="text-destructive">
-                        Delete Profile
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-4">
-                    <p className="text-sm text-muted-foreground">
-                        Deleting this profile will permanently remove
-                        all associated transactions. This action cannot
-                        be undone.
-                    </p>
-                    <div className="flex justify-end">
-                        <Button
-                            variant="destructive"
-                            onClick={() =>
-                                setDeleteDialogOpen(true)
-                            }
-                        >
-                            Delete Profile
-                        </Button>
+            <div className="w-full rounded-lg border border-destructive/30">
+                <div className="border-b border-destructive/30 px-6 py-4">
+                    <h2 className="text-base font-semibold text-destructive">
+                        Danger Zone
+                    </h2>
+                </div>
+                <div className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="space-y-1">
+                        <p className="font-medium">Delete this profile</p>
+                        <p className="text-sm text-muted-foreground">
+                            Once you delete a profile, there is no going
+                            back. All associated transactions will be
+                            permanently removed.
+                        </p>
                     </div>
-                </CardContent>
-            </Card>
+                    <Button
+                        variant="destructive"
+                        onClick={() => setDeleteDialogOpen(true)}
+                        className="shrink-0"
+                    >
+                        Delete this profile
+                    </Button>
+                </div>
+            </div>
 
             <Dialog
                 open={deleteDialogOpen}
