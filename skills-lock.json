@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "pnpm": {
+      "source": "hairyf/skills",
+      "sourceType": "github",
+      "skillPath": "skills/pnpm/SKILL.md",
+      "computedHash": "bd8353f601082d30aacb8987d30818e13df4ac0d52bcd6af6c86c1f69f83e264"
+    },
     "prisma-cli": {
       "source": "prisma/skills",
       "sourceType": "github",
