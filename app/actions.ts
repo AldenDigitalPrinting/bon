@@ -73,6 +73,42 @@ export async function deleteProfile(id: string | null) {
     }
 }
 
+export async function updateProfile(id: string | null, name: string | null) {
+    await sleep();
+    if (!id) return { success: false, error: "ID cannot be empty." };
+    if (!name || !name.trim())
+        return { success: false, error: "Name cannot be empty." };
+    try {
+        const profile = await prisma.profile.findFirst({ where: { id } });
+
+        if (profile === null)
+            return { success: false, error: "Profile not found." };
+
+        const result = await prisma.profile.update({
+            where: { id: profile.id },
+            data: { name: name.trim() },
+        });
+
+        revalidatePath(`/profile/${id}`);
+        revalidatePath(`/profile/${id}/settings`);
+        return { success: true, data: result };
+    } catch (error) {
+        if (
+            typeof error === "object" &&
+            error !== null &&
+            "code" in error &&
+            (error as { code?: unknown }).code === "P2002"
+        ) {
+            return {
+                success: false,
+                error: "A profile with the same name already exists.",
+            };
+        }
+        console.error("Error updating profile:", error);
+        return { success: false, error: `Failed to update profile: ${error}` };
+    }
+}
+
 export type PageParam = number | "last";
 export type TransactionType = "payment" | "debt" | undefined;
 
