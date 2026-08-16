@@ -262,3 +262,302 @@ export async function createTransaction({
         return { success: false, error: "Failed to create transaction." };
     }
 }
+
+// ============================================
+// ORDERAN (Cash Sales)
+// ============================================
+
+export type OrderStatus = "PENDING" | "PRINTING" | "DONE";
+
+export interface OrderItemInput {
+    description: string;
+    size: string;
+    quantity: number;
+    unitPrice: number;
+    jobType: "CETAK" | "EDIT" | "DESAIN";
+    serviceFee: number;
+}
+
+export interface CreateOrderInput {
+    notaId: string;
+    date: Date;
+    customerName: string;
+    notes?: string;
+    items: OrderItemInput[];
+}
+
+export async function createOrder(input: CreateOrderInput) {
+    await sleep();
+    try {
+        // Calculate totals
+        const itemsWithTotals = input.items.map((item) => {
+            const lineTotal = item.quantity * item.unitPrice + item.serviceFee;
+            return { ...item, lineTotal };
+        });
+        const totalAmount = itemsWithTotals.reduce((sum, item) => sum + item.lineTotal, 0);
+
+        const order = await prisma.$transaction(async (tx) => {
+            const newOrder = await tx.order.create({
+                data: {
+                    notaId: input.notaId,
+                    date: input.date,
+                    customerName: input.customerName,
+                    notes: input.notes,
+                    totalAmount,
+                    status: "DONE" as OrderStatus,
+                    items: {
+                        create: itemsWithTotals.map((item) => ({
+                            description: item.description,
+                            size: item.size,
+                            quantity: item.quantity,
+                            unitPrice: item.unitPrice,
+                            jobType: item.jobType,
+                            serviceFee: item.serviceFee,
+                            lineTotal: item.lineTotal,
+                        })),
+                    },
+                },
+                include: { items: true },
+            });
+            return newOrder;
+        });
+
+        revalidatePath("/orders");
+        return { success: true, data: order };
+    } catch (error) {
+        if (
+            typeof error === "object" &&
+            error !== null &&
+            "code" in error &&
+            (error as { code?: unknown }).code === "P2002"
+        ) {
+            return { success: false, error: "Nota ID already exists." };
+        }
+        console.error("Error creating order:", error);
+        return { success: false, error: `Failed to create order: ${error}` };
+    }
+}
+
+export async function getOrders(
+    page: number = 1,
+    pageSize: number = 20,
+    searchNotaId?: string,
+    searchCustomer?: string,
+    status?: OrderStatus,
+) {
+    await sleep();
+    try {
+        const where: Record<string, unknown> = {};
+
+        if (searchNotaId?.trim()) {
+            where.notaId = { contains: searchNotaId.trim(), mode: "insensitive" };
+        }
+        if (searchCustomer?.trim()) {
+            where.customerName = { contains: searchCustomer.trim(), mode: "insensitive" };
+        }
+        if (status) {
+            where.status = status;
+        }
+
+        const totalCount = await prisma.order.count({ where });
+        const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+        const currentPage = Math.min(Math.max(1, page), totalPages);
+        const skip = (currentPage - 1) * pageSize;
+
+        const data = await prisma.order.findMany({
+            where,
+            orderBy: [{ date: "desc" }, { createdAt: "desc" }],
+            skip,
+            take: pageSize,
+            include: { items: true },
+        });
+
+        return {
+            success: true,
+            data,
+            pagination: { totalCount, totalPages, currentPage, pageSize },
+        };
+    } catch (error) {
+        console.error("Error fetching orders:", error);
+        return { success: false, error: `Failed to get orders: ${error}` };
+    }
+}
+
+export async function getOrderById(id: string) {
+    await sleep();
+    try {
+        const order = await prisma.order.findUnique({
+            where: { id },
+            include: { items: { include: { gelondongan: true } } },
+        });
+        if (!order) return { success: false, error: "Order not found" };
+        return { success: true, data: order };
+    } catch (error) {
+        console.error("Error fetching order:", error);
+        return { success: false, error: `Failed to get order: ${error}` };
+    }
+}
+
+// ============================================
+// GELONDONGAN (Print Production)
+// ============================================
+
+export type Shift = "PAGI" | "SIANG" | "MALAM";
+
+export interface CreateGelondonganInput {
+    rollNumber: number;
+    date: Date;
+    shift: Shift;
+    revenue: number;
+    dailyTotal: number;
+    rollTotal: number;
+}
+
+export async function createGelondongan(input: CreateGelondonganInput) {
+    await sleep();
+    try {
+        const gelondongan = await prisma.gelondongan.create({
+            data: {
+                rollNumber: input.rollNumber,
+                date: input.date,
+                shift: input.shift,
+                revenue: input.revenue,
+                dailyTotal: input.dailyTotal,
+                rollTotal: input.rollTotal,
+            },
+        });
+        revalidatePath("/gelondongan");
+        return { success: true, data: gelondongan };
+    } catch (error) {
+        if (
+            typeof error === "object" &&
+            error !== null &&
+            "code" in error &&
+            (error as { code?: unknown }).code === "P2002"
+        ) {
+            return { success: false, error: "Roll number already exists." };
+        }
+        console.error("Error creating gelondongan:", error);
+        return { success: false, error: `Failed to create gelondongan: ${error}` };
+    }
+}
+
+export async function getGelondongans(
+    page: number = 1,
+    pageSize: number = 20,
+) {
+    await sleep();
+    try {
+        const totalCount = await prisma.gelondongan.count();
+        const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+        const currentPage = Math.min(Math.max(1, page), totalPages);
+        const skip = (currentPage - 1) * pageSize;
+
+        const data = await prisma.gelondongan.findMany({
+            orderBy: [{ date: "desc" }, { rollNumber: "desc" }],
+            skip,
+            take: pageSize,
+            include: {
+                items: {
+                    include: { order: true },
+                },
+            },
+        });
+
+        return {
+            success: true,
+            data,
+            pagination: { totalCount, totalPages, currentPage, pageSize },
+        };
+    } catch (error) {
+        console.error("Error fetching gelondongans:", error);
+        return { success: false, error: `Failed to get gelondongans: ${error}` };
+    }
+}
+
+export async function getGelondonganByRollNumber(rollNumber: number) {
+    await sleep();
+    try {
+        const gelondongan = await prisma.gelondongan.findUnique({
+            where: { rollNumber },
+            include: { items: { include: { order: true } } },
+        });
+        if (!gelondongan) return { success: false, error: "Gelondongan not found" };
+        return { success: true, data: gelondongan };
+    } catch (error) {
+        console.error("Error fetching gelondongan:", error);
+        return { success: false, error: `Failed to get gelondongan: ${error}` };
+    }
+}
+
+export async function assignItemToGelondongan(itemId: string, gelondonganId: string) {
+    await sleep();
+    try {
+        const item = await prisma.orderItem.update({
+            where: { id: itemId },
+            data: {
+                gelondonganId,
+                printedAt: new Date(),
+            },
+            include: { gelondongan: true },
+        });
+        revalidatePath("/orders");
+        revalidatePath("/gelondongan");
+        return { success: true, data: item };
+    } catch (error) {
+        console.error("Error assigning item to gelondongan:", error);
+        return { success: false, error: `Failed to assign item: ${error}` };
+    }
+}
+
+export async function unassignItemFromGelondongan(itemId: string) {
+    await sleep();
+    try {
+        const item = await prisma.orderItem.update({
+            where: { id: itemId },
+            data: {
+                gelondonganId: null,
+                printedAt: null,
+            },
+        });
+        revalidatePath("/orders");
+        revalidatePath("/gelondongan");
+        return { success: true, data: item };
+    } catch (error) {
+        console.error("Error unassigning item:", error);
+        return { success: false, error: `Failed to unassign item: ${error}` };
+    }
+}
+
+// Helper to recalculate gelondongan totals
+export async function recalculateGelondonganTotals(gelondonganId: string) {
+    await sleep();
+    try {
+        const gelondongan = await prisma.gelondongan.findUnique({
+            where: { id: gelondonganId },
+            include: { items: true },
+        });
+        if (!gelondongan) return { success: false, error: "Gelondongan not found" };
+
+        const revenue = gelondongan.items.reduce((sum, item) => sum + item.lineTotal, 0);
+
+        // Get previous gelondongan for dailyTotal calculation
+        const previousGelondongan = await prisma.gelondongan.findFirst({
+            where: { date: { lte: gelondongan.date }, rollNumber: { lt: gelondongan.rollNumber } },
+            orderBy: [{ date: "desc" }, { rollNumber: "desc" }],
+        });
+
+        const previousDailyTotal = previousGelondongan?.dailyTotal ?? 0;
+        const dailyTotal = previousDailyTotal + revenue;
+
+        const updated = await prisma.gelondongan.update({
+            where: { id: gelondonganId },
+            data: { revenue, dailyTotal, rollTotal: revenue },
+        });
+
+        return { success: true, data: updated };
+    } catch (error) {
+        console.error("Error recalculating totals:", error);
+        return { success: false, error: `Failed to recalculate: ${error}` };
+    }
+}
