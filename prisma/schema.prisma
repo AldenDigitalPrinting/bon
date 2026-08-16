@@ -31,6 +31,72 @@ model Transaction {
   debtAdded     Int
   debtPaid      Int
   accumulation  Int
-  
+
   createdAt     DateTime  @default(now())
+}
+
+// ============================================
+// ORDERAN & GELONDONGAN (Cash Sales + Production)
+// ============================================
+
+model Order {
+  id            String        @id @default(uuid())
+  notaId        String        @unique
+  date          DateTime      @default(now())
+  customerName  String
+  notes         String?
+  totalAmount   Int
+  status        OrderStatus   @default(PENDING)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id            String        @id @default(uuid())
+  orderId       String
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  description   String
+  size          String
+  quantity      Int
+  unitPrice     Int
+  jobType       JobType
+  serviceFee    Int
+  lineTotal     Int
+  gelondonganId String?
+  gelondongan   Gelondongan?  @relation(fields: [gelondonganId], references: [id])
+  printedAt     DateTime?
+  printedBy     String?
+  createdAt     DateTime      @default(now())
+}
+
+model Gelondongan {
+  id            String        @id @default(uuid())
+  rollNumber    Int           @unique
+  date          DateTime      @default(now())
+  shift         Shift
+  revenue       Int
+  dailyTotal    Int
+  rollTotal     Int
+  items         OrderItem[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum OrderStatus {
+  PENDING
+  PRINTING
+  DONE
+}
+
+enum JobType {
+  CETAK
+  EDIT
+  DESAIN
+}
+
+enum Shift {
+  PAGI
+  SIANG
+  MALAM
 }
