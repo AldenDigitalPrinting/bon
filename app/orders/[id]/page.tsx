@@ -6,8 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
-import { formatCurrency } from "@/lib/utils";
+import { id as localeId } from "date-fns/locale";
 import { OrderDetail } from "./order-detail";
 
 interface PageProps {
@@ -40,7 +39,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
           <div>
             <h1 className="text-2xl font-semibold">{order.notaId}</h1>
             <p className="text-muted-foreground text-sm">
-              {format(new Date(order.date), "EEEE, dd MMMM yyyy", { locale: id })}
+              {format(new Date(order.date), "EEEE, dd MMMM yyyy", { locale: localeId })}
             </p>
           </div>
         </div>

@@ -2,12 +2,12 @@ import { getGelondonganByRollNumber } from "@/app/actions";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { ArrowLeft, Plus, Sunrise, Sun, Moon, CheckCircle, Calculator, Package } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { formatCurrency } from "@/lib/utils";
 import { GelondonganDetail } from "./gelondongan-detail";
 
 interface PageProps {

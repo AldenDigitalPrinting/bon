@@ -19,7 +19,9 @@ export default async function GelondonganPage({
   const params = await searchParams;
   const page = parseInt(params.page || "1", 10);
 
-  const { data: gelondongans, pagination } = await getGelondongans(page, 20);
+  const result = await getGelondongans(page, 20);
+  const gelondongans = result.data || [];
+  const pagination = result.pagination || { totalCount: 0, totalPages: 1, currentPage: 1, pageSize: 20 };
 
   return (
     <div className="flex flex-col gap-6 mx-auto w-full max-w-7xl px-4 py-8">
@@ -43,7 +45,7 @@ export default async function GelondonganPage({
       </div>
 
       <GelondonganTable
-        gelondongans={gelondongans || []}
+        gelondongans={gelondongans}
         pagination={pagination}
       />
     </div>

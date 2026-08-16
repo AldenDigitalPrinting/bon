@@ -62,24 +62,20 @@ export function Pagination({
         <Button
           variant="outline"
           size="icon-sm"
-          asChild
           disabled={currentPage === 1}
           aria-label="First page"
+          onClick={() => (window.location.href = buildUrl(1))}
         >
-          <a href={buildUrl(1)}>
-            <ChevronsLeft className="h-4 w-4" />
-          </a>
+          <ChevronsLeft className="h-4 w-4" />
         </Button>
         <Button
           variant="outline"
           size="icon-sm"
-          asChild
           disabled={currentPage === 1}
           aria-label="Previous page"
+          onClick={() => (window.location.href = buildUrl(currentPage - 1))}
         >
-          <a href={buildUrl(currentPage - 1)}>
-            <ChevronLeft className="h-4 w-4" />
-          </a>
+          <ChevronLeft className="h-4 w-4" />
         </Button>
 
         {visiblePages.map((page, index) => {
@@ -94,12 +90,12 @@ export function Pagination({
               <Button
                 variant={page === currentPage ? "default" : "outline"}
                 size="sm"
-                asChild
                 className="min-w-[36px]"
                 aria-label={`Page ${page}`}
                 aria-current={page === currentPage ? "page" : undefined}
+                onClick={() => (window.location.href = buildUrl(page))}
               >
-                <a href={buildUrl(page)}>{page}</a>
+                {page}
               </Button>
             </span>
           );
@@ -108,24 +104,20 @@ export function Pagination({
         <Button
           variant="outline"
           size="icon-sm"
-          asChild
           disabled={currentPage === totalPages}
           aria-label="Next page"
+          onClick={() => (window.location.href = buildUrl(currentPage + 1))}
         >
-          <a href={buildUrl(currentPage + 1)}>
-            <ChevronRight className="h-4 w-4" />
-          </a>
+          <ChevronRight className="h-4 w-4" />
         </Button>
         <Button
           variant="outline"
           size="icon-sm"
-          asChild
           disabled={currentPage === totalPages}
           aria-label="Last page"
+          onClick={() => (window.location.href = buildUrl(totalPages))}
         >
-          <a href={buildUrl(totalPages)}>
-            <ChevronsRight className="h-4 w-4" />
-          </a>
+          <ChevronsRight className="h-4 w-4" />
         </Button>
       </div>
     </nav>

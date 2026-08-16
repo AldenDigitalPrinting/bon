@@ -27,13 +27,15 @@ export default async function OrdersPage({
   const searchCustomer = params.searchCustomer;
   const status = params.status;
 
-  const { data: orders, pagination } = await getOrders(
+  const result = await getOrders(
     page,
     20,
     searchNotaId,
     searchCustomer,
     status as "PENDING" | "PRINTING" | "DONE" | undefined,
   );
+  const orders = result.data || [];
+  const pagination = result.pagination || { totalCount: 0, totalPages: 1, currentPage: 1, pageSize: 20 };
 
   const searchParamsObj = new URLSearchParams();
   if (searchNotaId) searchParamsObj.set("searchNotaId", searchNotaId);

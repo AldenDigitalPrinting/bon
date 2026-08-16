@@ -369,7 +369,7 @@ export async function getOrders(
             orderBy: [{ date: "desc" }, { createdAt: "desc" }],
             skip,
             take: pageSize,
-            include: { items: true },
+            include: { items: { include: { gelondongan: true } } },
         });
 
         return {

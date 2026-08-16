@@ -15,28 +15,45 @@ import { Pagination } from "@/components/ui/pagination";
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { id } from "date-fns/locale";
+import { id as localeId } from "date-fns/locale";
 import { formatCurrency } from "@/lib/utils";
 
-interface OrdersTableProps {
-  orders: Array<{
+interface OrderItem {
+  id: string;
+  description: string;
+  size: string;
+  quantity: number;
+  unitPrice: number;
+  jobType: string;
+  serviceFee: number;
+  lineTotal: number;
+  gelondonganId: string | null;
+  printedAt: Date | string | null;
+  printedBy: string | null;
+  gelondongan: {
     id: string;
-    notaId: string;
+    rollNumber: number;
+    shift: string;
     date: Date | string;
-    customerName: string;
-    notes: string | null;
-    totalAmount: number;
-    status: string;
-    items: Array<{
-      id: string;
-      description: string;
-      gelondonganId: string | null;
-      gelondongan: {
-        rollNumber: number;
-        shift: string;
-      } | null;
-    }>;
-  }>;
+  } | null;
+  orderId: string;
+  createdAt: Date | string;
+}
+
+interface Order {
+  id: string;
+  notaId: string;
+  date: Date | string;
+  customerName: string;
+  notes: string | null;
+  totalAmount: number;
+  status: string;
+  createdAt: Date | string;
+  items: OrderItem[];
+}
+
+interface OrdersTableProps {
+  orders: Order[];
   pagination: {
     totalCount: number;
     totalPages: number;
@@ -89,7 +106,7 @@ export function OrdersTable({
                 </Link>
               </TableCell>
               <TableCell>
-                {format(new Date(order.date), "dd MMM yyyy", { locale: id })}
+                {format(new Date(order.date), "dd MMM yyyy", { locale: localeId })}
               </TableCell>
               <TableCell>
                 <div className="font-medium">{order.customerName}</div>

@@ -1,0 +1,330 @@
+"use client";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Printer, CheckCircle, Clock, XCircle, ArrowRight } from "lucide-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+
+interface OrderItem {
+  id: string;
+  description: string;
+  size: string;
+  quantity: number;
+  unitPrice: number;
+  jobType: string;
+  serviceFee: number;
+  lineTotal: number;
+  gelondonganId: string | null;
+  printedAt: Date | string | null;
+  printedBy: string | null;
+  gelondongan: {
+    id: string;
+    rollNumber: number;
+    shift: string;
+    date: Date | string;
+  } | null;
+}
+
+interface Order {
+  id: string;
+  notaId: string;
+  date: Date | string;
+  customerName: string;
+  notes: string | null;
+  totalAmount: number;
+  status: string;
+  createdAt: Date | string;
+  items: OrderItem[];
+}
+
+interface OrderDetailProps {
+  order: Order;
+}
+
+const jobTypeColors: Record<string, string> = {
+  CETAK: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  EDIT: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+  DESAIN: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+};
+
+const statusColors: Record<string, string> = {
+  PENDING: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
+  PRINTING: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  DONE: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+};
+
+export function OrderDetail({ order }: OrderDetailProps) {
+  const unassignedItems = order.items.filter((item) => !item.gelondonganId);
+  const assignedItems = order.items.filter((item) => item.gelondonganId);
+
+  return (
+    <div className="space-y-6">
+      {/* Header Info */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Nota ID</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold font-mono">{order.notaId}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pelanggan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl font-semibold">{order.customerName}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tanggal</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl font-semibold">
+              {format(new Date(order.date), "dd MMM yyyy", { locale: id })}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Badge className={cn("text-lg px-3 py-1", statusColors[order.status])}>
+              {order.status}
+            </Badge>
+          </CardContent>
+        </Card>
+      </div>
+
+      {order.notes && (
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-muted-foreground">Catatan: {order.notes}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Items Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Items ({order.items.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-4 font-medium text-muted-foreground">Deskripsi</th>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Ukuran</th>
+                  <th className="text-right p-4 font-medium text-muted-foreground">Qty</th>
+                  <th className="text-right p-4 font-medium text-muted-foreground">Harga Satuan</th>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Jenis</th>
+                  <th className="text-right p-4 font-medium text-muted-foreground">Biaya Jasa</th>
+                  <th className="text-right p-4 font-medium text-muted-foreground">Total</th>
+                  <th className="text-left p-4 font-medium text-muted-foreground">Cetak</th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.items.map((item) => (
+                  <tr key={item.id} className="border-b last:border-0 hover:bg-muted/30">
+                    <td className="p-4">
+                      <div className="font-medium">{item.description}</div>
+                    </td>
+                    <td className="p-4 font-mono">{item.size}</td>
+                    <td className="p-4 text-right font-mono tabular-nums">{item.quantity}</td>
+                    <td className="p-4 text-right font-mono tabular-nums">
+                      {formatCurrency(item.unitPrice)}
+                    </td>
+                    <td className="p-4">
+                      <Badge
+                        variant="secondary"
+                        className={cn("text-xs", jobTypeColors[item.jobType])}
+                      >
+                        {item.jobType}
+                      </Badge>
+                    </td>
+                    <td className="p-4 text-right font-mono tabular-nums">
+                      {formatCurrency(item.serviceFee)}
+                    </td>
+                    <td className="p-4 text-right font-mono tabular-nums font-medium">
+                      {formatCurrency(item.lineTotal)}
+                    </td>
+                    <td className="p-4">
+                      {item.gelondonganId ? (
+                        <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                          <CheckCircle className="h-4 w-4" />
+                          <span>
+                            Roll {item.gelondongan?.rollNumber} -{" "}
+                            {item.gelondongan?.shift}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Belum dicetak</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="bg-muted/50 font-bold">
+                  <td colSpan={6} className="p-4 text-right">Total</td>
+                  <td className="p-4 text-right font-mono tabular-nums">
+                    {formatCurrency(order.totalAmount)}
+                  </td>
+                  <td className="p-4"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Assign to Gelondongan */}
+      {unassignedItems.length > 0 && (
+        <Card className="border-primary">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Printer className="h-5 w-5 text-primary" />
+              Assign ke Gelondongan ({unassignedItems.length} item belum dicetak)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Pilih roll dan shift untuk item yang belum dicetak:
+            </p>
+            <AssignToGelondonganForm
+              orderId={order.id}
+              items={unassignedItems}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Already Assigned */}
+      {assignedItems.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              Sudah Dicetak ({assignedItems.length} item)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {assignedItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium">{item.description}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {item.size} × {item.quantity}
+                    </span>
+                    <Badge variant="secondary" className={cn(jobTypeColors[item.jobType])}>
+                      {item.jobType}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="font-mono tabular-nums">
+                      {formatCurrency(item.lineTotal)}
+                    </span>
+                    {item.gelondongan && (
+                      <span className="px-2 py-1 rounded bg-primary/10 text-primary text-xs font-mono">
+                        R{item.gelondongan.rollNumber}-{item.gelondongan.shift[0]}
+                      </span>
+                    )}
+                    {item.printedAt && (
+                      <span className="text-muted-foreground">
+                        {format(new Date(item.printedAt), "dd/MM HH:mm", { locale: id })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Total */}
+      <Card>
+        <CardContent className="flex items-center justify-between">
+          <span className="text-lg font-semibold">Grand Total</span>
+          <span className="text-2xl font-bold font-mono tabular-nums">
+            {formatCurrency(order.totalAmount)}
+          </span>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Form to assign items to gelondongan
+interface AssignToGelondonganFormProps {
+  orderId: string;
+  items: OrderItem[];
+}
+
+function AssignToGelondonganForm({ orderId, items }: AssignToGelondonganFormProps) {
+  return (
+    <form
+      action={async (formData: FormData) => {
+        "use server";
+        const { assignItemToGelondongan } = await import("@/app/actions");
+        const gelondonganId = formData.get("gelondonganId") as string;
+        const itemIds = formData.getAll("itemIds") as string[];
+
+        for (const itemId of itemIds) {
+          await assignItemToGelondongan(itemId, gelondonganId);
+        }
+      }}
+      className="space-y-4"
+    >
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium mb-1">Gelondongan (Roll)</label>
+          <select
+            name="gelondonganId"
+            required
+            className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="">-- Pilih Roll --</option>
+          </select>
+        </div>
+        <div className="sm:col-span-2">
+          <label className="block text-sm font-medium mb-2">Item yang akan di-assign:</label>
+          <div className="flex flex-wrap gap-2">
+            {items.map((item) => (
+              <label
+                key={item.id}
+                className="inline-flex items-center gap-2 rounded border bg-background px-3 py-1.5 text-sm cursor-pointer hover:bg-muted/50"
+              >
+                <input
+                  type="checkbox"
+                  name="itemIds"
+                  value={item.id}
+                  defaultChecked
+                  className="h-4 w-4 rounded border-input text-primary focus-visible:ring-2 focus-visible:ring-ring"
+                />
+                <span>{item.description} ({item.size} × {item.quantity})</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+      <Button type="submit" className="w-full sm:w-auto">
+        <ArrowRight className="mr-2 h-4 w-4" />
+        Assign ke Roll
+      </Button>
+    </form>
+  );
+}
