@@ -12,25 +12,152 @@ datasource db {
 }
 
 model Profile {
-  id            String        @id @default(uuid())
-  name          String        @unique
-  createdAt     DateTime      @default(now())
-  transactions  Transaction[]
+  id           String        @id @default(uuid())
+  name         String        @unique
+  createdAt    DateTime      @default(now())
+  transactions Transaction[]
 }
 
 model Transaction {
-  id            String    @id @default(uuid())
-  profileId     String
-  profiles      Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id        String  @id @default(uuid())
+  profileId String
+  profiles  Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  date          DateTime  @default(now())
-  personName    String
-  itemName      String
-  itemQuantity  Int?
-  itemPrice     Int?
-  debtAdded     Int
-  debtPaid      Int
-  accumulation  Int
-  
-  createdAt     DateTime  @default(now())
+  date         DateTime @default(now())
+  personName   String
+  itemName     String
+  itemQuantity Int?
+  itemPrice    Int?
+  debtAdded    Int
+  debtPaid     Int
+  accumulation Int
+
+  createdAt DateTime @default(now())
+}
+
+/**
+ * <!-- prettier-ignore -->
+ * +---------+-------+---------+---------------+----------------+--------+--------+-----------------------------+---------------------------+----------------------------+-------------+
+ * | Nota ID | Hari  | Tanggal |   Pelanggan   |   Keterangan   | Ukuran | Jumlah | Harga Satuan (17.000 / m^2) | Jenis (cetak/edit/desain) | Biaya jasa (edit & desain) | Total Harga |
+ * +---------+-------+---------+---------------+----------------+--------+--------+-----------------------------+---------------------------+----------------------------+-------------+
+ * |       1 | Senin | 20/07   | SMPN 2 Sambit | PPDB           | 3x1    |      4 |                      51.000 | Desain                    |                     20.000 |     224.000 |
+ * |       1 | Senin | 20/07   | SMPN 2 Sambit | Selamat Datang | 4x1    |      1 |                      68.000 | Edit                      |                     10.000 |      78.000 |
+ * |       1 | Senin | 20/07   | SMPN 2 Sambit | MPLS           | 3x2    |      1 |                     102.000 | Cetak                     |                          - |     102.000 |
+ * |       2 | Senin | 20/07   | SMPN 2 Sambit | Tata Tertib    | 1x1    |      3 |                      17.000 | Cetak                     |                          - |      51.000 |
+ * +---------+-------+---------+---------------+----------------+--------+--------+-----------------------------+---------------------------+----------------------------+-------------+
+ * 1. Penghasilan per hari dengan cara mendapatkan semua transaksi pada tanggal tertentu lalu menjumlahkan total harga semua transaksi
+ */
+
+model Receipt {
+  id String @id @default(uuid())
+
+  personName  String
+  date        DateTime @default(now())
+  items       Banner[]
+  totalAmount Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Banner {
+  id        String  @id @default(uuid())
+  receiptId String
+  receipt   Receipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+
+  printingSessionId String?
+  printingSession   PrintingSession? @relation(fields: [printingSessionId], references: [id], onDelete: SetNull)
+
+  name       String
+  size       String // e.g. "3x1"
+  quantity   Int     @db.SmallInt
+  unitPrice  Int // Rp. 17.000,00 / m^2
+  serviceFee Int?
+  jobType    JobType
+  lineTotal  Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum JobType {
+  DESAIN
+  EDIT
+  CETAK
+}
+
+/**
+ * <!-- prettier-ignore -->
+ * Banner:
+ * +----+----------------------+-------------+------+-------+----------+-------------+----------+------------+------------+------------+-------------+
+ * | ID | Receipt              | Banner      | Size | Qty | Unit Price | Service Fee | Job Type | Line Total | Session    | Time Slot  | Roll        |
+ * +----+----------------------+-------------+------+-----+------------+-------------+----------+------------+------------+------------+-------------+
+ * |  1 | SMPN 2 Sambit - PPDB | PPDB        | 3x1  | 4   | 51.000     | 20.000      | DESAIN   | 224.000    | 2026-07-20 | PAGI       | Roll 1      |
+ * |  2 | SMPN 2 Sambit - PPDB | Selamat     | 4x1  | 1   | 68.000     | 10.000      | EDIT     | 78.000     | 2026-07-20 | SIANG      | Roll 1      |
+ * |  3 | SMPN 2 Sambit - PPDB | MPLS        | 3x2  | 1   | 102.000    | -           | CETAK    | 102.000    | 2026-07-20 | MALAM      | Roll 1      |
+ * |  4 | SMPN 2 Sambit - TT   | Tata Tertib | 1x1  | 3   | 17.000     | -           | CETAK    | 51.000     | 2026-07-20 | PAGI       | Roll 2      |
+ * +----+----------------------+-------------+------+-----+------------+-------------+----------+------------+------------+------------+-------------+
+ */
+
+/**
+ * <!-- prettier-ignore -->
+ * PrintingSession (per roll, per time slot):
+ * +----+------------+-----------+---------+--------+
+ * | ID | Date       | Time Slot | Revenue | Roll   |
+ * +----+------------+-----------+---------+--------+
+ * |  1 | 2026-07-20 | PAGI      | 224.000 | Roll 1 |
+ * |  2 | 2026-07-20 | SIANG     | 78.000  | Roll 1 |
+ * |  3 | 2026-07-20 | MALAM     | 102.000 | Roll 1 |
+ * |  4 | 2026-07-20 | PAGI      | 51.000  | Roll 2 |
+ * +----+------------+-----------+---------+--------+
+ */
+
+/**
+ * <!-- prettier-ignore -->
+ * Roll:
+ * +----+----------+---------------------+----------+--------------+----------+
+ * | ID | Number   | Started At          | Ended At | Total Revenue | Active |
+ * +----+----------+---------------------+----------+--------------+----------+
+ * |  1 | 1        | 2026-07-20 08:00    | null     | 404.000       | true   |
+ * |  2 | 2        | 2026-07-20 08:00    | null     | 51.000        | true   |
+ * +----+----------+---------------------+----------+--------------+----------+
+ */
+
+model PrintingSession {
+  id     String @id @default(uuid())
+  rollId String
+  roll   Roll   @relation(fields: [rollId], references: [id], onDelete: Cascade)
+
+  banners Banner[]
+
+  date     DateTime
+  timeSlot TimeSlot
+  revenue  Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([date, timeSlot])
+  @@index([date])
+  @@index([rollId])
+}
+
+model Roll {
+  id           String    @id @default(uuid())
+  number       Int
+  startedAt    DateTime  @default(now())
+  endedAt      DateTime?
+  totalRevenue Int       @default(0)
+  isActive     Boolean   @default(true)
+
+  sessions PrintingSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum TimeSlot {
+  PAGI
+  SIANG
+  MALAM
 }
