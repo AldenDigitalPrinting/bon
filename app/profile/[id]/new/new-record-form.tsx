@@ -24,7 +24,10 @@ import {
 } from "@/components/ui/input-group";
 import { Card, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { createTransaction, type TransactionProps } from "@/app/actions";
+import {
+    createTransaction,
+    type TransactionProps,
+} from "@/app/actions/transaction";
 import { Spinner } from "@/components/ui/spinner";
 
 interface PageProps {

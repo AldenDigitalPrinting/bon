@@ -37,7 +37,7 @@ import {
     getTransactionsWithAccumulation,
     type PageParam,
     type TransactionType,
-} from "@/app/actions";
+} from "@/app/actions/transaction";
 import { columns, type TransactionWithAccumulation } from "./columns";
 import { DateRange } from "react-day-picker";
 import { X, FunnelX, Search, Filter } from "lucide-react";
@@ -207,9 +207,7 @@ export function TransactionDataTable({
                                 placeholder="Search person name..."
                                 value={filterSearchPersonName}
                                 onChange={(e) => {
-                                    setFilterSearchPersonName(
-                                        e.target.value,
-                                    );
+                                    setFilterSearchPersonName(e.target.value);
                                     setPage(1);
                                 }}
                             />
@@ -349,9 +347,7 @@ export function TransactionDataTable({
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell
                                             className={
-                                                verticalBorder
-                                                    ? "border-r"
-                                                    : ""
+                                                verticalBorder ? "border-r" : ""
                                             }
                                             key={cell.id}
                                         >

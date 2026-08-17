@@ -3,16 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { updateProfile, deleteProfile } from "@/app/actions";
+import { updateProfile, deleteProfile } from "@/app/actions/profile";
 import type { Profile } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
     Dialog,
@@ -31,10 +26,7 @@ interface SettingsFormProps {
     transactionCount: number;
 }
 
-export function SettingsForm({
-    profile,
-    transactionCount,
-}: SettingsFormProps) {
+export function SettingsForm({ profile, transactionCount }: SettingsFormProps) {
     const router = useRouter();
     const [name, setName] = useState(profile.name);
     const [isSaving, setIsSaving] = useState(false);
@@ -50,8 +42,7 @@ export function SettingsForm({
 
             if (!response.success) {
                 toast.error("Failed to update profile", {
-                    description:
-                        response.error || "Something went wrong.",
+                    description: response.error || "Something went wrong.",
                 });
                 return;
             }
@@ -59,8 +50,7 @@ export function SettingsForm({
             toast.success("Profile name updated");
         } catch (error) {
             toast.error("Connection/System Error", {
-                description:
-                    "A network or system error occurred.\n" + error,
+                description: "A network or system error occurred.\n" + error,
             });
         } finally {
             setIsSaving(false);
@@ -75,8 +65,7 @@ export function SettingsForm({
 
             if (!response.success) {
                 toast.error("Failed to delete profile", {
-                    description:
-                        response.error || "Something went wrong.",
+                    description: response.error || "Something went wrong.",
                 });
                 return;
             }
@@ -85,8 +74,7 @@ export function SettingsForm({
             router.push("/");
         } catch (error) {
             toast.error("Connection/System Error", {
-                description:
-                    "A network or system error occurred.\n" + error,
+                description: "A network or system error occurred.\n" + error,
             });
         } finally {
             setIsDeleting(false);
@@ -120,31 +108,22 @@ export function SettingsForm({
                                 <Input
                                     id="profile-name"
                                     value={name}
-                                    onChange={(e) =>
-                                        setName(e.target.value)
-                                    }
+                                    onChange={(e) => setName(e.target.value)}
                                     disabled={isSaving}
                                     required
                                 />
                             </Field>
                             <Field>
-                                <FieldLabel>
-                                    Transactions
-                                </FieldLabel>
+                                <FieldLabel>Transactions</FieldLabel>
                                 <p className="text-sm text-muted-foreground">
                                     {transactionCount.toLocaleString()}{" "}
                                     transaction
-                                    {transactionCount === 1
-                                        ? ""
-                                        : "s"}
+                                    {transactionCount === 1 ? "" : "s"}
                                 </p>
                             </Field>
                         </FieldGroup>
                         <div className="flex justify-end">
-                            <Button
-                                type="submit"
-                                disabled={isSaving}
-                            >
+                            <Button type="submit" disabled={isSaving}>
                                 {isSaving ? (
                                     <>
                                         <Spinner /> Saving
@@ -170,9 +149,9 @@ export function SettingsForm({
                     <div className="space-y-1">
                         <p className="font-medium">Delete this profile</p>
                         <p className="text-sm text-muted-foreground">
-                            Once you delete a profile, there is no going
-                            back. All associated transactions will be
-                            permanently removed.
+                            Once you delete a profile, there is no going back.
+                            All associated transactions will be permanently
+                            removed.
                         </p>
                     </div>
                     <Button
@@ -185,18 +164,15 @@ export function SettingsForm({
                 </div>
             </div>
 
-            <Dialog
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-            >
+            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Delete Profile</DialogTitle>
                         <DialogDescription>
                             Are you sure you want to delete{" "}
-                            <strong>{profile.name}</strong>? This
-                            action cannot be undone and all associated
-                            transactions will be permanently removed.
+                            <strong>{profile.name}</strong>? This action cannot
+                            be undone and all associated transactions will be
+                            permanently removed.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>

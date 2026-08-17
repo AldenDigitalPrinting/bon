@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { deleteProfile } from "@/app/actions";
+import { deleteProfile } from "@/app/actions/profile";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {

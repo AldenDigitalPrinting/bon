@@ -1,4 +1,4 @@
-import { getProfiles } from "./actions";
+import { getProfiles } from "./actions/profile";
 import { buttonVariants } from "@/components/ui/button";
 import { CreateProfileDialog } from "@/components/create-profile-dialog";
 import Link from "next/link";

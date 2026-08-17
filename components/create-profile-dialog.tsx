@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createProfile } from "@/app/actions";
+import { createProfile } from "@/app/actions/profile";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
