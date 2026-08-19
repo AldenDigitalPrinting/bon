@@ -51,10 +51,10 @@ model Transaction {
 model Receipt {
   id String @id @default(uuid())
 
-  personName  String
-  date        DateTime @default(now())
-  items       Banner[]
-  totalAmount Int
+  personName String
+  date       DateTime @default(now())
+  totalPrice Int
+  items      Banner[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
